@@ -1,0 +1,1635 @@
+﻿<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Codificatore â€” Generatore Codici Meccanici</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0F1117;--card:#181B24;--card-hover:#1E2230;--border:#2A2E3B;--text:#E8E9ED;--text-dim:#8B8FA3;--accent:#3A7BE8;--accent-h:#4A8BF8;--red:#E85D3A;--green:#2EAE6D;--orange:#E8A33A;--font:'DM Sans','Segoe UI',system-ui,sans-serif;--mono:'JetBrains Mono','SF Mono',monospace}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14px;min-height:100vh}
+input,select,button,textarea{font-family:var(--font)}
+::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+#toast{position:fixed;top:16px;right:16px;padding:10px 20px;border-radius:8px;color:#fff;font-weight:600;z-index:999;font-size:13px;box-shadow:0 4px 20px rgba(0,0,0,.4);transform:translateY(-20px);opacity:0;transition:all .25s ease;pointer-events:none}
+#toast.show{transform:translateY(0);opacity:1}
+
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeIn .2s}
+.modal{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px;max-width:480px;width:100%;max-height:90vh;overflow-y:auto}
+.modal h3{font-size:17px;font-weight:700;margin-bottom:18px}
+.modal-actions{display:flex;gap:8px;margin-top:20px;justify-content:flex-end}
+.modal-field{display:flex;flex-direction:column;gap:4px;margin-bottom:12px}
+.modal-field label{font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:.06em}
+.modal-field input,.modal-field select{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-size:13px;outline:none;width:100%}
+
+#login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+.login-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:48px 40px;max-width:400px;width:100%;text-align:center}
+.login-logo{color:var(--accent);margin-bottom:12px}
+.login-title{font-size:28px;font-weight:800;letter-spacing:-.02em}
+.login-sub{color:var(--text-dim);margin:8px 0 28px;font-size:14px}
+.login-users{display:flex;flex-direction:column;gap:8px}
+.login-btn{display:flex;justify-content:space-between;align-items:center;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:14px 16px;cursor:pointer;color:var(--text);font-size:14px;transition:background .15s;border-left:4px solid var(--accent)}
+.login-btn:hover{background:var(--card-hover)}
+.login-btn .name{font-weight:600}
+.login-btn .role{color:var(--text-dim);font-size:12px;text-transform:uppercase;letter-spacing:.05em}
+
+#app-header{display:none;align-items:center;justify-content:space-between;padding:0 24px;height:56px;border-bottom:1px solid var(--border);background:var(--card);position:sticky;top:0;z-index:50;flex-wrap:wrap;gap:8px}
+.logo{font-weight:800;font-size:16px;color:var(--accent);display:flex;align-items:center;gap:6px;letter-spacing:-.02em}
+.nav{display:flex;gap:4px}
+.nav-btn{background:transparent;border:none;color:var(--text-dim);padding:8px 14px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;display:flex;align-items:center;gap:6px;transition:all .15s}
+.nav-btn:hover{color:var(--text)}
+.nav-btn.active{background:rgba(58,123,232,.09);color:var(--accent)}
+.header-right{display:flex;align-items:center;gap:10px}
+.user-pill{display:flex;align-items:center;gap:6px;padding:4px 12px 4px 6px;border-radius:20px;border:1.5px solid;font-size:13px;font-weight:500}
+.user-dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.logout-btn{background:transparent;border:1px solid var(--border);color:var(--text-dim);padding:4px 12px;border-radius:6px;cursor:pointer;font-size:12px}
+.logout-btn:hover{color:var(--text);border-color:var(--text-dim)}
+
+#app-main{max-width:1100px;margin:0 auto;padding:24px 16px;display:none}
+.section-title{font-size:18px;font-weight:700;margin:0 0 20px;display:flex;align-items:center;gap:8px;letter-spacing:-.01em}
+.view-panel{display:none}.view-panel.active{display:block}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px}
+
+.btn-primary{background:var(--accent);border:none;color:#fff;padding:10px 20px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:6px;transition:background .15s}
+.btn-primary:hover{background:var(--accent-h)}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text-dim);padding:8px 14px;border-radius:8px;cursor:pointer;font-size:13px;transition:all .15s}
+.btn-outline:hover{color:var(--text);border-color:var(--text-dim)}
+.btn-ghost{background:transparent;border:none;color:var(--text-dim);padding:8px 14px;border-radius:8px;cursor:pointer;font-size:13px}
+.btn-ghost:hover{color:var(--text);background:rgba(255,255,255,.04)}
+.add-btn-sm{background:var(--accent);border:none;color:#fff;padding:10px 18px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+.add-btn-sm:hover{background:var(--accent-h)}
+
+.field-group{display:flex;flex-direction:column;gap:4px}
+.field-group label{font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:.06em}
+.field-group select,.field-group input{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-size:13px;outline:none;width:100%;transition:border-color .15s}
+.field-group select:focus,.field-group input:focus{border-color:var(--accent)}
+.field-group select{cursor:pointer}
+
+.gen-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px}
+.code-preview{background:var(--bg);border:2px solid var(--accent);border-radius:16px;padding:32px 24px;text-align:center;margin:24px 0}
+.code-preview-label{font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px}
+.code-preview-value{font-family:var(--mono);font-size:46px;font-weight:800;color:var(--accent);letter-spacing:.05em;line-height:1}
+.code-preview-value.empty{color:var(--border);font-size:28px}
+.filetype-row{display:flex;gap:10px;margin-bottom:24px}
+.filetype-btn{flex:1;background:var(--bg);border:2px solid var(--border);border-radius:10px;padding:16px;cursor:pointer;color:var(--text-dim);font-size:14px;font-weight:600;transition:all .15s;text-align:center}
+.filetype-btn:hover{border-color:var(--accent);color:var(--text)}
+.filetype-btn.active{border-color:var(--accent);background:rgba(58,123,232,.09);color:var(--accent)}
+.filetype-ext{font-family:var(--mono);font-size:12px;color:var(--text-dim);margin-top:4px}
+.filetype-btn.active .filetype-ext{color:var(--accent);opacity:.7}
+
+.archive-filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:0;align-items:flex-end}
+.archive-filters .field-group{flex:1;min-width:130px}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;padding:10px 12px;font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--border)}
+td{padding:10px 12px;font-size:13px;white-space:nowrap;border-bottom:1px solid rgba(42,46,59,.5)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.02)}
+.code-badge{font-family:var(--mono);font-weight:700;font-size:14px;color:var(--accent);background:rgba(58,123,232,.1);padding:3px 10px;border-radius:6px;letter-spacing:.03em}
+.type-badge{font-family:var(--mono);font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px}
+.type-sldprt{background:rgba(46,174,109,.12);color:var(--green)}
+.type-sldasm{background:rgba(232,163,58,.12);color:var(--orange)}
+.tbadge-macchina{background:rgba(58,123,232,.15);color:var(--accent)}
+.tbadge-gruppo{background:rgba(168,85,247,.15);color:#A855F7}
+.tbadge-sottogruppo{background:rgba(232,163,58,.15);color:var(--orange)}
+.tbadge-parte{background:rgba(46,174,109,.15);color:var(--green)}
+.empty-text{color:var(--text-dim);font-style:italic;font-size:13px;padding:32px 0;text-align:center}
+
+.mgmt-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.mgmt-tab{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 18px;cursor:pointer;color:var(--text-dim);font-size:13px;font-weight:500;transition:all .15s}
+.mgmt-tab:hover{color:var(--text)}
+.mgmt-tab.active{background:rgba(58,123,232,.09);border-color:rgba(58,123,232,.27);color:var(--accent)}
+.mgmt-panel{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px}
+.mgmt-list{display:flex;flex-direction:column;gap:6px;margin-bottom:20px}
+.mgmt-item{display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--bg);border-radius:8px;border:1px solid var(--border);flex-wrap:wrap}
+.mgmt-item-code{font-family:var(--mono);font-weight:800;font-size:15px;color:var(--accent);min-width:52px}
+.mgmt-item-name{font-weight:600;font-size:14px;flex:1;min-width:120px}
+.mgmt-item-meta{font-size:12px;color:var(--text-dim)}
+.mgmt-item-actions{display:flex;gap:4px;margin-left:auto}
+.mini-btn{background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:4px 8px;cursor:pointer;color:var(--text-dim);font-size:12px;display:inline-flex;align-items:center}
+.mini-btn:hover{color:var(--text);border-color:var(--text-dim)}
+.mini-btn.danger{color:var(--red)}.mini-btn.danger:hover{color:#ff7755}
+.mgmt-form{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;padding-top:16px;border-top:1px solid var(--border)}
+.mgmt-form-field{display:flex;flex-direction:column;gap:4px}
+.mgmt-form-field label{font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:.06em}
+.mgmt-form-field input,.mgmt-form-field select{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-size:13px;outline:none}
+.mgmt-form-field input:focus,.mgmt-form-field select:focus{border-color:var(--accent)}
+.status-badge{font-size:11px;padding:2px 10px;border-radius:12px;font-weight:600}
+.user-tag{padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600}
+
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.card,.mgmt-panel{animation:fadeUp .3s ease}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<div id="sync-status" style="position:fixed;bottom:20px;right:20px;padding:8px 14px;border-radius:20px;font-size:12px;font-weight:600;color:#fff;z-index:9999;background:#888;box-shadow:0 4px 12px rgba(0,0,0,.3)">&#8987; Caricamento...</div>
+<div id="toast"></div>
+<div id="modal-root"></div>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+    </div>
+    <h1 class="login-title">Codificatore</h1>
+    <p class="login-sub">Generatore Codici Meccanici</p>
+    <div id="login-users" class="login-users"></div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header id="app-header">
+  <span class="logo">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+    Codificatore
+  </span>
+  <nav class="nav" id="main-nav"></nav>
+  <div class="header-right">
+<span class="user-pill" id="user-pill"></span>
+    <button class="logout-btn" onclick="changePassword()" title="Cambia password">&#128273;</button>
+    <button class="logout-btn" onclick="logout()">Esci</button>
+  </div>
+</header>
+
+<!-- MAIN -->
+<div id="app-main">
+
+  <!-- GENERA -->
+  <div id="view-genera" class="view-panel active">
+    <h2 class="section-title">&#9881; Genera Codice</h2>
+    <div class="card">
+      <div style="margin-bottom:8px;font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:.06em">Tipo di codice</div>
+      <div class="filetype-row" style="margin-bottom:20px">
+        <div class="filetype-btn active" id="ft-macchina" onclick="selectType('macchina')">
+          <div>Macchina</div>
+          <div class="filetype-ext">MMM-S00 &bull; .sldasm</div>
+        </div>
+        <div class="filetype-btn" id="ft-gruppo" onclick="selectType('gruppo')">
+          <div>Gruppo</div>
+          <div class="filetype-ext">MMM-GGG-S00 &bull; .sldasm</div>
+        </div>
+        <div class="filetype-btn" id="ft-sottogruppo" onclick="selectType('sottogruppo')">
+          <div>Sottogruppo</div>
+          <div class="filetype-ext">MMM-GGG-999 &bull; .sldasm</div>
+        </div>
+        <div class="filetype-btn" id="ft-parte" onclick="selectType('parte')">
+          <div>Parte</div>
+          <div class="filetype-ext">MMM-GGG-001 &bull; .sldprt</div>
+        </div>
+      </div>
+
+      <div class="gen-grid">
+        <div class="field-group">
+          <label>Macchina</label>
+          <select id="gen-machine" onchange="onMachineChange()">
+            <option value="">&#8212; Seleziona macchina &#8212;</option>
+          </select>
+        </div>
+        <div class="field-group" id="gen-group-wrap">
+          <label>Gruppo</label>
+          <select id="gen-group" onchange="updatePreview()" disabled>
+            <option value="">&#8212; prima la macchina &#8212;</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Descrizione (opzionale)</label>
+          <input type="text" id="gen-desc" placeholder="es. Flangia superiore">
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="code-preview">
+          <div class="code-preview-label">Prossimo codice</div>
+          <div class="code-preview-value empty" id="preview-value">MMM-S00</div>
+        </div>
+        <div class="code-preview" style="border-color:var(--border)">
+          <div class="code-preview-label">Ultimo codice generato</div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <div class="code-preview-value empty" id="last-code-value" style="flex:1;font-size:36px">&#8212;</div>
+            <button class="mini-btn" id="last-copy-btn" onclick="copyLastCode()" title="Copia codice" style="flex-shrink:0;opacity:0.4;pointer-events:none">&#10697;</button>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn-primary" onclick="generateCode()" style="width:100%;padding:16px;font-size:15px;border-radius:10px;justify-content:center">
+        &#9881; Genera + Apri in SolidWorks
+      </button>
+    </div>
+  </div>
+
+  <!-- ARCHIVIO -->
+  <div id="view-archivio" class="view-panel">
+    <h2 class="section-title">&#128203; Archivio Codici</h2>
+    <div class="card" style="margin-bottom:16px">
+      <div class="archive-filters">
+        <div class="field-group">
+          <label>Macchina</label>
+          <select id="af-machine" onchange="onArchiveMachineChange()"><option value="">Tutte</option></select>
+        </div>
+        <div class="field-group">
+          <label>Gruppo</label>
+          <select id="af-group" onchange="renderArchive()"><option value="">Tutti</option></select>
+        </div>
+        <div class="field-group">
+          <label>Tipo</label>
+          <select id="af-type" onchange="renderArchive()">
+            <option value="">Tutti i tipi</option>
+            <option value="macchina">Macchina</option>
+            <option value="gruppo">Gruppo</option>
+            <option value="sottogruppo">Sottogruppo</option>
+            <option value="parte">Parte</option>
+          </select>
+        </div>
+        <div class="field-group" style="flex:2;min-width:180px">
+          <label>Cerca</label>
+          <input type="text" id="af-search" placeholder="es. TRN-BAS o descrizione" oninput="renderArchive()">
+        </div>
+        <button class="btn-ghost" onclick="resetArchiveFilters()" style="margin-bottom:0">&#8635; Reset</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="table-wrap" id="archive-table"></div>
+    </div>
+  </div>
+
+  <!-- GESTIONE -->
+  <div id="view-gestione" class="view-panel">
+    <h2 class="section-title">&#128295; Gestione Anagrafiche</h2>
+    <div class="mgmt-tabs" id="mgmt-tabs"></div>
+    <div id="mgmt-content"></div>
+  </div>
+
+</div>
+
+<script>
+// â”€â”€â”€ DB â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+const DB_KEY = 'codificatore_v1';
+const defaultSettings = {};
+const defaultDB = {
+  users: [{ id: 'u1', name: 'Amministratore', username: 'admin', role: 'admin', color: '#3A7BE8' }],
+  machines: [],
+  groups: [],
+  codes: [],
+  settings: Object.assign({}, defaultSettings),
+  nextId: 100
+};
+
+let db, currentUser = null, currentView = 'genera', activeMgmtTab = null, selectedType = 'macchina';
+
+// â”€â”€â”€ SUPABASE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// âš  Sostituisci con i tuoi dati Supabase
+// Tabella richiesta: CREATE TABLE codificatore_data (id INTEGER PRIMARY KEY, data JSONB, updated_at TIMESTAMPTZ DEFAULT NOW());
+// RLS: ALTER TABLE codificatore_data ENABLE ROW LEVEL SECURITY; CREATE POLICY "allow_all" ON codificatore_data FOR ALL USING (true) WITH CHECK (true);
+const SUPABASE_URL='https://rlqvkdcmrgexxohemkgk.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJscXZrZGNtcmdleHhvaGVta2drIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzMjg2MTEsImV4cCI6MjA5MzkwNDYxMX0.275Chx5tjH4fCtsMcz84QFoXsBZjuI7nwY-KUO4Vonw';
+let supa = null;
+try { if (SUPABASE_URL !== 'YOUR_SUPABASE_URL_HERE') supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); } catch(e) { console.error(e); }
+
+let syncTimer = null, lastUpdate = null, pendingSync = false, isSavingLocal = false;
+
+function updateSyncStatus(s) {
+  const el = document.getElementById('sync-status');
+  if (!el) return;
+  const c = { ok: '#2EAE6D', sync: '#E8A33A', err: '#E85A4F', off: '#888' };
+  const l = { ok: '&#10003; Sincronizzato', sync: '&#8987; Sincronizzazione...', err: '&#10007; Errore sync', off: '&#8856; Offline (locale)' };
+  el.style.background = c[s]; el.innerHTML = l[s];
+}
+
+function migrateDB() {
+  if (!db) return;
+  if (!db.machines) db.machines = [];
+  if (!db.groups) db.groups = [];
+  if (!db.codes) db.codes = [];
+  if (!db.users) db.users = [];
+  if (!db.settings) db.settings = Object.assign({}, defaultSettings);
+}
+
+async function loadDB() {
+  let hasLocal = false, hasPendingLocal = false;
+  try {
+    const r = localStorage.getItem(DB_KEY);
+    if (r) { db = JSON.parse(r); hasLocal = true; migrateDB(); }
+    hasPendingLocal = localStorage.getItem(DB_KEY + '_pending') === '1';
+  } catch(e) {}
+
+  if (supa) {
+    updateSyncStatus('sync');
+    try {
+      const { data, error } = await supa.from('codificatore_data').select('data,updated_at').eq('id', 1).single();
+      if (error && error.code === 'PGRST116') {
+        if (!hasLocal) db = JSON.parse(JSON.stringify(defaultDB));
+        await supa.from('codificatore_data').insert({ id: 1, data: db });
+        localStorage.setItem(DB_KEY, JSON.stringify(db));
+        localStorage.removeItem(DB_KEY + '_pending');
+      } else if (data && data.data) {
+        if (hasPendingLocal && hasLocal) {
+          const cloudTime = new Date(data.updated_at).getTime();
+          const localTime = parseInt(localStorage.getItem(DB_KEY + '_savedAt') || '0');
+          if (localTime > cloudTime) {
+            await supa.from('codificatore_data').upsert({ id: 1, data: db, updated_at: new Date().toISOString() });
+            localStorage.removeItem(DB_KEY + '_pending');
+            showToast('Modifiche locali sincronizzate!');
+          } else {
+            db = data.data; lastUpdate = data.updated_at; migrateDB();
+            localStorage.setItem(DB_KEY, JSON.stringify(db));
+            localStorage.removeItem(DB_KEY + '_pending');
+          }
+        } else {
+          db = data.data; lastUpdate = data.updated_at; migrateDB();
+          localStorage.setItem(DB_KEY, JSON.stringify(db));
+        }
+      }
+      updateSyncStatus('ok'); pendingSync = false;
+      startRealtimeSubscription(); startPolling();
+    } catch(e) {
+      console.error('Errore load Supabase:', e); updateSyncStatus('err');
+      if (!db || !db.users) db = JSON.parse(JSON.stringify(defaultDB));
+      if (hasPendingLocal) pendingSync = true;
+    }
+  } else {
+    if (!db || !db.users) { db = JSON.parse(JSON.stringify(defaultDB)); localStorage.setItem(DB_KEY, JSON.stringify(db)); }
+    updateSyncStatus('off');
+  }
+}
+
+function saveDB() {
+  localStorage.setItem(DB_KEY, JSON.stringify(db));
+  localStorage.setItem(DB_KEY + '_savedAt', Date.now().toString());
+  localStorage.setItem(DB_KEY + '_pending', '1');
+  pendingSync = true;
+  if (supa) {
+    if (syncTimer) clearTimeout(syncTimer);
+    updateSyncStatus('sync');
+    syncTimer = setTimeout(async () => {
+      try {
+        isSavingLocal = true;
+        const { error } = await supa.from('codificatore_data').upsert({ id: 1, data: db, updated_at: new Date().toISOString() });
+        if (error) throw error;
+        localStorage.removeItem(DB_KEY + '_pending'); pendingSync = false;
+        updateSyncStatus('ok');
+        setTimeout(() => { isSavingLocal = false; }, 800);
+      } catch(e) { console.error(e); updateSyncStatus('err'); isSavingLocal = false; }
+    }, 600);
+  }
+}
+
+let realtimeChannel = null;
+function startRealtimeSubscription() {
+  if (!supa) return;
+  if (realtimeChannel) supa.removeChannel(realtimeChannel);
+  realtimeChannel = supa.channel('codificatore_changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'codificatore_data' }, payload => {
+      if (payload.new && payload.new.data && payload.new.updated_at) applyRemoteData(payload.new.data, payload.new.updated_at);
+    }).subscribe();
+}
+
+let pollTimer = null;
+function startPolling() {
+  if (pollTimer) clearInterval(pollTimer);
+  pollTimer = setInterval(async () => {
+    if (!supa || isSavingLocal) return;
+    try {
+      const { data } = await supa.from('codificatore_data').select('updated_at,data').eq('id', 1).single();
+      if (data && data.updated_at !== lastUpdate) applyRemoteData(data.data, data.updated_at);
+    } catch(e) {}
+  }, 3000);
+}
+
+function applyRemoteData(newData, newUpdate) {
+  if (isSavingLocal || lastUpdate === newUpdate) return;
+  db = newData; lastUpdate = newUpdate; migrateDB();
+  localStorage.setItem(DB_KEY, JSON.stringify(db));
+  rerenderCurrent();
+  const el = document.getElementById('sync-status');
+  if (el) { el.style.background = '#3A7BE8'; el.innerHTML = '&#8635; Aggiornato da altri'; setTimeout(() => updateSyncStatus('ok'), 1800); }
+}
+
+function rerenderCurrent() {
+  if (!currentUser) return;
+  if (currentView === 'genera') renderGenera();
+  else if (currentView === 'archivio') renderArchive();
+  else if (currentView === 'gestione') renderGestione();
+}
+
+window.addEventListener('beforeunload', e => {
+  if (pendingSync) { e.preventDefault(); e.returnValue = 'Modifiche non ancora salvate sul cloud.'; }
+});
+window.addEventListener('online', () => { if (pendingSync) { showToast('Connessione tornata, sincronizzo...'); saveDB(); } });
+
+// â”€â”€â”€ UTILS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function fmtDate(d) {
+  if (!d) return 'â€”';
+  const s = d.split('T')[0].split('-');
+  return `${s[2]}/${s[1]}/${s[0]}`;
+}
+function todayStr() { return new Date().toISOString().split('T')[0]; }
+function showToast(m, t = 'success') {
+  const el = document.getElementById('toast');
+  el.textContent = m; el.style.background = t === 'error' ? 'var(--red)' : 'var(--green)';
+  el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 2500);
+}
+function _a() { return currentUser && currentUser.role === 'admin'; }
+function gid() { return 'id' + (db.nextId++); }
+function openModal(h) { document.getElementById('modal-root').innerHTML = `<div class="modal-overlay" onclick="if(event.target===this)closeModal()"><div class="modal">${h}</div></div>`; }
+function closeModal() { document.getElementById('modal-root').innerHTML = ''; }
+
+// â”€â”€â”€ AUTH â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+async function hashPassword(pwd) {
+  const enc = new TextEncoder().encode(pwd + '_codificatore_salt_2026');
+  const buf = await crypto.subtle.digest('SHA-256', enc);
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+let pendingLoginUserId = null;
+
+function renderLogin() {
+  document.getElementById('login-users').innerHTML = db.users.map(u =>
+    `<button class="login-btn" style="border-left-color:${u.color}" onclick="loginAs('${u.id}')">
+      <span class="name">${u.username || u.name}</span>
+      <span class="role">${u.role === 'admin' ? 'Admin' : 'Operatore'}${!u.passwordHash ? ' â€” &#9888; No pwd' : ''}</span>
+    </button>`
+  ).join('');
+}
+
+function loginAs(uid) {
+  const user = db.users.find(u => u.id === uid); if (!user) return;
+  showPasswordModal(uid, user.passwordHash ? 'login' : 'create');
+}
+
+function showPasswordModal(uid, mode) {
+  pendingLoginUserId = uid;
+  const user = db.users.find(u => u.id === uid);
+  const isCreate = mode === 'create';
+  const html = `<div class="modal-backdrop" style="position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)closePwdModal()">
+    <div class="modal">
+      <h3 style="color:var(--accent);margin-bottom:8px">${isCreate ? 'Imposta password &mdash; ' + (user.username || user.name) : 'Accesso: ' + (user.username || user.name)}</h3>
+      <p style="margin:0 0 20px;color:var(--text-dim);font-size:13px">${isCreate ? 'Prima volta: crea la tua password personale' : 'Inserisci la tua password'}</p>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <input type="password" id="pwd-input" placeholder="Password" autocomplete="${isCreate ? 'new-password' : 'current-password'}" onkeydown="if(event.key==='Enter')submitPwd()" style="width:100%;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;outline:none">
+        ${isCreate ? '<input type="password" id="pwd-confirm" placeholder="Conferma password" autocomplete="new-password" onkeydown="if(event.key===\'Enter\')submitPwd()" style="width:100%;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;outline:none">' : ''}
+        <div id="pwd-error" style="color:var(--red);font-size:13px;display:none"></div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px">
+          <button class="btn-outline" onclick="closePwdModal()">Annulla</button>
+          <button class="add-btn-sm" onclick="submitPwd()">${isCreate ? 'Crea password' : 'Accedi'}</button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+  document.body.insertAdjacentHTML('beforeend', html);
+  setTimeout(() => document.getElementById('pwd-input')?.focus(), 50);
+}
+
+function closePwdModal() { document.querySelector('.modal-backdrop')?.remove(); pendingLoginUserId = null; }
+
+async function submitPwd() {
+  const user = db.users.find(u => u.id === pendingLoginUserId); if (!user) return;
+  const pwd = document.getElementById('pwd-input').value;
+  const errEl = document.getElementById('pwd-error');
+  if (!pwd || pwd.length < 4) { errEl.textContent = 'Password troppo corta (min 4 caratteri)'; errEl.style.display = 'block'; return; }
+  if (!user.passwordHash) {
+    const confirm = document.getElementById('pwd-confirm').value;
+    if (pwd !== confirm) { errEl.textContent = 'Le password non coincidono'; errEl.style.display = 'block'; return; }
+    user.passwordHash = await hashPassword(pwd); saveDB(); closePwdModal(); doLogin(user);
+  } else {
+    const hash = await hashPassword(pwd);
+    if (hash !== user.passwordHash) {
+      errEl.textContent = 'Password errata'; errEl.style.display = 'block';
+      document.getElementById('pwd-input').value = ''; document.getElementById('pwd-input').focus(); return;
+    }
+    closePwdModal(); doLogin(user);
+  }
+}
+
+function doLogin(user) {
+  currentUser = user;
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app-header').style.display = 'flex';
+  document.getElementById('app-main').style.display = 'block';
+  renderHeader(); setView('genera');
+}
+
+function logout() {
+  currentUser = null;
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('app-header').style.display = 'none';
+  document.getElementById('app-main').style.display = 'none';
+  renderLogin();
+}
+
+function changePassword() {
+  if (!currentUser) return;
+  const html = `<div class="modal-backdrop" style="position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)closePwdModal()">
+    <div class="modal">
+      <h3 style="color:var(--accent)">Cambia password</h3>
+      <div style="display:flex;flex-direction:column;gap:12px;margin-top:16px">
+        <input type="password" id="cp-old" placeholder="Password attuale" style="width:100%;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;outline:none">
+        <input type="password" id="cp-new" placeholder="Nuova password" style="width:100%;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;outline:none">
+        <input type="password" id="cp-confirm" placeholder="Conferma nuova password" onkeydown="if(event.key==='Enter')submitChangePwd()" style="width:100%;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;outline:none">
+        <div id="cp-error" style="color:var(--red);font-size:13px;display:none"></div>
+        <div style="display:flex;gap:8px;justify-content:flex-end">
+          <button class="btn-outline" onclick="closePwdModal()">Annulla</button>
+          <button class="add-btn-sm" onclick="submitChangePwd()">Cambia</button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+  document.body.insertAdjacentHTML('beforeend', html);
+  setTimeout(() => document.getElementById('cp-old')?.focus(), 50);
+}
+
+async function submitChangePwd() {
+  const old = document.getElementById('cp-old').value;
+  const np = document.getElementById('cp-new').value;
+  const cf = document.getElementById('cp-confirm').value;
+  const err = document.getElementById('cp-error');
+  if ((await hashPassword(old)) !== currentUser.passwordHash) { err.textContent = 'Password attuale errata'; err.style.display = 'block'; return; }
+  if (np.length < 4) { err.textContent = 'Nuova password troppo corta (min 4)'; err.style.display = 'block'; return; }
+  if (np !== cf) { err.textContent = 'Le password non coincidono'; err.style.display = 'block'; return; }
+  currentUser.passwordHash = await hashPassword(np);
+  const u = db.users.find(x => x.id === currentUser.id); if (u) u.passwordHash = currentUser.passwordHash;
+  saveDB(); closePwdModal(); showToast('Password cambiata!');
+}
+
+async function resetUserPassword(uid) {
+  if (!_a() || !confirm('Resettare la password? DovrÃ  crearne una nuova al prossimo accesso.')) return;
+  const u = db.users.find(x => x.id === uid); if (!u) return;
+  delete u.passwordHash; saveDB(); showToast('Password resettata'); renderGestione();
+}
+
+// â”€â”€â”€ HEADER â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function renderHeader() {
+  const pill = document.getElementById('user-pill');
+  pill.style.borderColor = currentUser.color;
+  pill.innerHTML = `<span class="user-dot" style="background:${currentUser.color}"></span>${currentUser.name.split(' ')[0]}`;
+  const tabs = [
+    { id: 'genera', label: 'Genera', icon: '&#9881;' },
+    { id: 'archivio', label: 'Archivio', icon: '&#128203;' }
+  ];
+  if (_a()) tabs.push({ id: 'gestione', label: 'Gestione', icon: '&#128295;' });
+  document.getElementById('main-nav').innerHTML = tabs.map(t =>
+    `<button class="nav-btn ${currentView === t.id ? 'active' : ''}" onclick="setView('${t.id}')">${t.icon} ${t.label}</button>`
+  ).join('');
+}
+
+function setView(v) {
+  currentView = v;
+  document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('view-' + v)?.classList.add('active');
+  renderHeader();
+  ({ genera: renderGenera, archivio: renderArchive, gestione: renderGestione })[v]?.();
+}
+
+// â”€â”€â”€ GENERA VIEW â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function typeToExt(type) { return type === 'parte' ? 'sldprt' : 'sldasm'; }
+
+function selectType(t) {
+  selectedType = t;
+  ['macchina','gruppo','sottogruppo','parte'].forEach(x => {
+    document.getElementById('ft-' + x).className = 'filetype-btn' + (x === t ? ' active' : '');
+  });
+  const needsGroup = t !== 'macchina';
+  const wrap = document.getElementById('gen-group-wrap');
+  if (wrap) wrap.style.display = needsGroup ? '' : 'none';
+  updatePreview();
+}
+
+function renderGenera() {
+  const sel = document.getElementById('gen-machine');
+  const prev = sel.value;
+  const active = db.machines.filter(m => m.active !== false);
+  sel.innerHTML = '<option value="">&#8212; Seleziona macchina &#8212;</option>' +
+    active.map(m => `<option value="${m.id}" ${m.id === prev ? 'selected' : ''}>${m.code} &mdash; ${m.name}</option>`).join('');
+  // apply current type visibility
+  const wrap = document.getElementById('gen-group-wrap');
+  if (wrap) wrap.style.display = selectedType !== 'macchina' ? '' : 'none';
+  if (prev) onMachineChange(true);
+  else {
+    document.getElementById('gen-group').innerHTML = '<option value="">&#8212; prima la macchina &#8212;</option>';
+    document.getElementById('gen-group').disabled = true;
+    updatePreview();
+  }
+}
+
+function onMachineChange(preserveGroup) {
+  const mid = document.getElementById('gen-machine').value;
+  const grpSel = document.getElementById('gen-group');
+  const prevGrp = preserveGroup ? grpSel.value : '';
+  if (!mid) {
+    grpSel.innerHTML = '<option value="">&#8212; prima la macchina &#8212;</option>';
+    grpSel.disabled = true; updatePreview(); return;
+  }
+  const groups = db.groups.filter(g => g.machineId === mid && g.active !== false);
+  grpSel.disabled = false;
+  grpSel.innerHTML = '<option value="">&#8212; Seleziona gruppo &#8212;</option>' +
+    groups.map(g => `<option value="${g.id}" ${g.id === prevGrp ? 'selected' : ''}>${g.code} &mdash; ${g.name}</option>`).join('');
+  updatePreview();
+}
+
+function _setLastCopyBtn(enabled) {
+  const btn = document.getElementById('last-copy-btn');
+  if (!btn) return;
+  btn.style.opacity = enabled ? '1' : '0.4';
+  btn.style.pointerEvents = enabled ? '' : 'none';
+}
+
+function copyLastCode() {
+  const el = document.getElementById('last-code-value');
+  const text = el ? el.textContent : '';
+  if (!text || el.classList.contains('empty')) return;
+  navigator.clipboard.writeText(text).then(() => showToast('Codice copiato!')).catch(() => showToast('Errore copia', 'error'));
+}
+
+function setLastCode(code) {
+  const el = document.getElementById('last-code-value');
+  if (!el) return;
+  el.className = 'code-preview-value';
+  el.textContent = code;
+  _setLastCopyBtn(true);
+}
+
+function updatePreview() {
+  const mid = document.getElementById('gen-machine').value;
+  const gid_val = document.getElementById('gen-group').value;
+  const el = document.getElementById('preview-value');
+  const m = db.machines.find(x => x.id === mid);
+
+  if (selectedType === 'macchina') {
+    if (!mid || !m) { el.className = 'code-preview-value empty'; el.textContent = 'MMM-S00'; return; }
+    const ex = db.codes.filter(c => c.type === 'macchina' && c.machineId === mid);
+    const next = ex.length === 0 ? 0 : Math.max(...ex.map(c => c.number)) + 1;
+    el.className = 'code-preview-value';
+    el.textContent = `${m.code}-S${String(next).padStart(2, '0')}`;
+    return;
+  }
+
+  const g = db.groups.find(x => x.id === gid_val);
+  if (!mid || !m) { el.className = 'code-preview-value empty'; el.textContent = 'MMM-GGG-???'; return; }
+  if (!gid_val || !g) { el.className = 'code-preview-value empty'; el.textContent = m.code + '-GGG-???'; return; }
+
+  if (selectedType === 'gruppo') {
+    const ex = db.codes.filter(c => c.type === 'gruppo' && c.machineId === mid && c.groupId === gid_val);
+    const next = ex.length === 0 ? 0 : Math.max(...ex.map(c => c.number)) + 1;
+    el.className = 'code-preview-value';
+    el.textContent = `${m.code}-${g.code}-S${String(next).padStart(2, '0')}`;
+  } else if (selectedType === 'sottogruppo') {
+    const ex = db.codes.filter(c => c.type === 'sottogruppo' && c.machineId === mid && c.groupId === gid_val);
+    const next = ex.length === 0 ? 999 : Math.min(...ex.map(c => c.number)) - 1;
+    el.className = 'code-preview-value';
+    el.textContent = `${m.code}-${g.code}-${String(next).padStart(3, '0')}`;
+  } else { // parte
+    const ex = db.codes.filter(c => c.type === 'parte' && c.machineId === mid && c.groupId === gid_val);
+    const next = ex.length === 0 ? 1 : Math.max(...ex.map(c => c.number)) + 1;
+    el.className = 'code-preview-value';
+    el.textContent = `${m.code}-${g.code}-${String(next).padStart(3, '0')}`;
+  }
+}
+
+function generateCode() {
+  const mid = document.getElementById('gen-machine').value;
+  const gid_val = selectedType === 'macchina' ? null : document.getElementById('gen-group').value;
+  const desc = document.getElementById('gen-desc').value.trim();
+  if (!mid) { showToast('Seleziona una macchina', 'error'); return; }
+  if (selectedType !== 'macchina' && !gid_val) { showToast('Seleziona un gruppo', 'error'); return; }
+  // Evita attese async prima del lancio locale: alcuni browser bloccano
+  // protocol handler/download quando il gesto utente non e' piu' attivo.
+
+  const m = db.machines.find(x => x.id === mid);
+  const g = gid_val ? db.groups.find(x => x.id === gid_val) : null;
+  if (!m) return;
+
+  let num, code, fileType;
+  fileType = typeToExt(selectedType);
+
+  if (selectedType === 'macchina') {
+    const ex = db.codes.filter(c => c.type === 'macchina' && c.machineId === mid);
+    num = ex.length === 0 ? 0 : Math.max(...ex.map(c => c.number)) + 1;
+    code = `${m.code}-S${String(num).padStart(2, '0')}`;
+  } else if (selectedType === 'gruppo') {
+    const ex = db.codes.filter(c => c.type === 'gruppo' && c.machineId === mid && c.groupId === gid_val);
+    num = ex.length === 0 ? 0 : Math.max(...ex.map(c => c.number)) + 1;
+    code = `${m.code}-${g.code}-S${String(num).padStart(2, '0')}`;
+  } else if (selectedType === 'sottogruppo') {
+    const ex = db.codes.filter(c => c.type === 'sottogruppo' && c.machineId === mid && c.groupId === gid_val);
+    num = ex.length === 0 ? 999 : Math.min(...ex.map(c => c.number)) - 1;
+    if (num < 0) { showToast('Numerazione sottogruppi esaurita (000)', 'error'); return; }
+    code = `${m.code}-${g.code}-${String(num).padStart(3, '0')}`;
+  } else { // parte
+    const ex = db.codes.filter(c => c.type === 'parte' && c.machineId === mid && c.groupId === gid_val);
+    num = ex.length === 0 ? 1 : Math.max(...ex.map(c => c.number)) + 1;
+    if (num > 999) { showToast('Numerazione parti esaurita (999)', 'error'); return; }
+    code = `${m.code}-${g.code}-${String(num).padStart(3, '0')}`;
+  }
+
+  if (db.codes.find(c => c.code === code)) {
+    showToast('Codice ' + code + ' giÃ  esistente â€” riprova', 'error'); return;
+  }
+
+  openInSolidWorks(code, selectedType);
+  db.codes.push({
+    id: gid(), type: selectedType,
+    machineId: mid, groupId: gid_val,
+    machineCode: m.code, groupCode: g ? g.code : null,
+    number: num, code, fileType, description: desc,
+    createdBy: currentUser.id, createdAt: new Date().toISOString()
+  });
+  saveDB();
+  showToast(code + ' generato!');
+  setLastCode(code);
+  document.getElementById('gen-desc').value = '';
+  updatePreview();
+}
+
+function downloadFile(name, content) {
+  const blob = new Blob([content], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = name; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function toBase64Utf8(text) {
+  const bytes = new TextEncoder().encode(text);
+  let bin = '';
+  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin);
+}
+
+function toBase64Utf16(text) {
+  const buf = [];
+  for (let i = 0; i < text.length; i++) {
+    const c = text.charCodeAt(i);
+    buf.push(c & 0xFF, (c >> 8) & 0xFF);
+  }
+  return btoa(String.fromCharCode(...buf));
+}
+
+function toBase64Url(text) {
+  // base64url, mantiene il padding "=" (lo script PowerShell evita l'operatore modulo)
+  return toBase64Utf8(text).replace(/\+/g, '-').replace(/\//g, '_');
+}
+
+function openInSolidWorks(code, type) {
+  const ext = typeToExt(type);
+  // Niente "//": il payload (case-sensitive) non deve finire nella parte "host" dell'URL,
+  // che i browser convertono in minuscolo. encodeURIComponent protegge l'eventuale "=".
+  const payload = encodeURIComponent(toBase64Url(JSON.stringify({ code, ext })));
+  window.location.href = `codsw:${payload}`;
+  showToast(`Apertura SolidWorks: ${code}`);
+}
+
+function downloadSetupReg() {
+  // PowerShell (solo apici singoli, nessun carattere '%' perche' Windows lo interpreta
+  // nei comandi di registro) fa da ponte: decodifica l'URL e scrive un .vbs locale che
+  // parla con SolidWorks via COM (IDispatch puro, l'unico modo affidabile). Il .vbs:
+  //  - aggancia l'istanza SolidWorks gia' aperta provando i ProgID versionati (40..25)
+  //  - se nessuna e' aperta, ne avvia una nuova
+  //  - crea un nuovo documento col template predefinito e lo intitola al codice
+  const ps = [
+    `$ErrorActionPreference='Stop'`,
+    `try{`,
+    `$u=[Environment]::GetCommandLineArgs()[-1]`,
+    `$r=[Uri]::UnescapeDataString($u.Substring(6).TrimStart('/')).Replace('-','+').Replace('_','/')`,
+    `$j=[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($r))`,
+    `$d=$j|ConvertFrom-Json`,
+    `$isPart=([string]$d.ext -eq 'sldprt')`,
+    `$prefnum=9`,
+    `if($isPart){$prefnum=8}`,
+    `$code=[string]$d.code`,
+    `$q=[char]34`,
+    `$nl=[char]13+[char]10`,
+    `$msgTpl=$q+'Template predefinito non configurato in SolidWorks (Strumenti > Opzioni > Posizioni file > Modelli documenti).'+$q`,
+    `$vbs='Dim sw, doc, tpl, v'+$nl+'On Error Resume Next'+$nl+'Set sw = Nothing'+$nl+'For v = 40 To 25 Step -1'+$nl+'Set sw = GetObject(, '+$q+'SldWorks.Application.'+$q+' & v)'+$nl+'If Not (sw Is Nothing) Then Exit For'+$nl+'Next'+$nl+'If sw Is Nothing Then Set sw = GetObject(, '+$q+'SldWorks.Application'+$q+')'+$nl+'If sw Is Nothing Then Set sw = CreateObject('+$q+'SldWorks.Application'+$q+')'+$nl+'sw.Visible = True'+$nl+'tpl = sw.GetUserPreferenceStringValue('+$prefnum+')'+$nl+'If tpl = '+$q+$q+' Then MsgBox '+$msgTpl+' : WScript.Quit'+$nl+'Set doc = sw.NewDocument(tpl, 0, 0, 0)'+$nl+'doc.SetTitle2 '+$q+$code+$q`,
+    `$vbsPath=$env:TEMP+'\\codsw_run.vbs'`,
+    `[IO.File]::WriteAllText($vbsPath,$vbs)`,
+    `Start-Process 'wscript' -ArgumentList $vbsPath -Wait`,
+    `}catch{`,
+    `Add-Type -AssemblyName PresentationFramework`,
+    `[System.Windows.MessageBox]::Show($_.Exception.Message,'Codificatore')`,
+    `}`,
+  ].join('; ');
+
+  const regCmd = `powershell -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -Command "${ps}" "%1"`;
+  const regValue = regCmd.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+
+  const regContent = [
+    `Windows Registry Editor Version 5.00`,
+    ``,
+    `[HKEY_CURRENT_USER\\Software\\Classes\\codsw]`,
+    `@="URL:Codificatore SolidWorks Protocol"`,
+    `"URL Protocol"=""`,
+    ``,
+    `[HKEY_CURRENT_USER\\Software\\Classes\\codsw\\shell\\open\\command]`,
+    `@="${regValue}"`,
+    ``
+  ].join('\r\n');
+
+  downloadFile('setup_codificatore.reg', regContent);
+  showToast('Scaricato setup_codificatore.reg — doppio clic per installare');
+}
+
+// â”€â”€â”€ ARCHIVIO VIEW â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function onArchiveMachineChange() {
+  const mid = document.getElementById('af-machine').value;
+  const grpSel = document.getElementById('af-group');
+  const groups = mid ? db.groups.filter(g => g.machineId === mid) : db.groups;
+  grpSel.innerHTML = '<option value="">Tutti i gruppi</option>' +
+    groups.map(g => `<option value="${g.id}">${g.code} &mdash; ${g.name}</option>`).join('');
+  renderArchive();
+}
+
+function renderArchive() {
+  const afm = document.getElementById('af-machine');
+  const cur = afm.value;
+  afm.innerHTML = '<option value="">Tutte le macchine</option>' +
+    db.machines.map(m => `<option value="${m.id}" ${m.id === cur ? 'selected' : ''}>${m.code} &mdash; ${m.name}</option>`).join('');
+
+  const macFilter = afm.value;
+  const grpFilter = document.getElementById('af-group').value;
+  const ft = document.getElementById('af-type').value;
+  const search = document.getElementById('af-search').value.toLowerCase();
+
+  let codes = [...db.codes].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  if (macFilter) codes = codes.filter(c => c.machineId === macFilter);
+  if (grpFilter) codes = codes.filter(c => c.groupId === grpFilter);
+  if (ft) codes = codes.filter(c => c.type === ft);
+  if (search) codes = codes.filter(c => c.code.toLowerCase().includes(search) || (c.description || '').toLowerCase().includes(search));
+
+  const el = document.getElementById('archive-table');
+  if (!codes.length) { el.innerHTML = '<p class="empty-text">Nessun codice trovato</p>'; return; }
+
+  el.innerHTML = `<table>
+    <thead><tr>
+      <th>Codice</th><th>Macchina</th><th>Gruppo</th><th>Tipo</th><th>Descrizione</th>
+      <th>Utente</th><th>Data</th><th>Azioni</th>
+    </tr></thead>
+    <tbody>${codes.map(c => {
+      const m = db.machines.find(x => x.id === c.machineId);
+      const g = db.groups.find(x => x.id === c.groupId);
+      const u = db.users.find(x => x.id === c.createdBy);
+      return `<tr>
+        <td><span class="code-badge">${c.code}</span></td>
+        <td>${m ? m.code + ' &mdash; ' + m.name : c.machineCode || '?'}</td>
+        <td>${g ? g.code + ' &mdash; ' + g.name : c.groupCode || '?'}</td>
+        <td><span class="tbadge-${c.type || 'parte'}">${c.type || '?'}</span></td>
+        <td style="color:var(--text-dim);max-width:200px;overflow:hidden;text-overflow:ellipsis">${c.description || '&mdash;'}</td>
+        <td>${u ? `<span class="user-tag" style="background:${u.color}22;color:${u.color}">${u.name.split(' ')[0]}</span>` : '?'}</td>
+        <td style="color:var(--text-dim)">${fmtDate(c.createdAt)}</td>
+        <td style="display:flex;gap:4px">
+          <button class="mini-btn" onclick="openInSolidWorks('${c.code}','${c.type || 'parte'}')" title="Apri in SolidWorks">&#9881;</button>
+          <button class="mini-btn" onclick="copyCode('${c.code}')" title="Copia codice">&#10697;</button>
+          ${_a() ? `<button class="mini-btn danger" onclick="delCode('${c.id}')" title="Elimina">&#128465;</button>` : ''}
+        </td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table>`;
+}
+
+function resetArchiveFilters() {
+  document.getElementById('af-machine').value = '';
+  document.getElementById('af-group').innerHTML = '<option value="">Tutti i gruppi</option>';
+  document.getElementById('af-type').value = '';
+  document.getElementById('af-search').value = '';
+  renderArchive();
+}
+
+function copyCode(code) {
+  navigator.clipboard.writeText(code)
+    .then(() => showToast('Codice copiato!'))
+    .catch(() => { showToast('Errore copia', 'error'); });
+}
+
+function delCode(id) {
+  if (!confirm('Eliminare questa voce dall\'archivio?')) return;
+  db.codes = db.codes.filter(c => c.id !== id);
+  saveDB(); showToast('Eliminato'); renderArchive();
+}
+
+// â”€â”€â”€ GESTIONE VIEW â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function renderGestione() {
+  const tabs = [
+    { id: 'machine', label: '&#128297; Macchine' },
+    { id: 'group', label: '&#128230; Gruppi' },
+    { id: 'user', label: '&#128100; Utenti' },
+    ...(_a() ? [{ id: 'backup', label: '&#128190; Backup' }] : []),
+    ...(_a() ? [{ id: 'impostazioni', label: '&#9881; Impostazioni' }] : [])
+  ];
+  document.getElementById('mgmt-tabs').innerHTML = tabs.map(t =>
+    `<button class="mgmt-tab ${activeMgmtTab === t.id ? 'active' : ''}" onclick="toggleMgmt('${t.id}')">${t.label}</button>`
+  ).join('');
+  renderMC();
+}
+
+function toggleMgmt(id) { activeMgmtTab = activeMgmtTab === id ? null : id; renderGestione(); }
+
+function renderMC() {
+  const el = document.getElementById('mgmt-content');
+  if (!activeMgmtTab) { el.innerHTML = ''; return; }
+
+  if (activeMgmtTab === 'machine') {
+    const rows = db.machines.length
+      ? db.machines.map(m => {
+          const gc = db.groups.filter(g => g.machineId === m.id).length;
+          const cc = db.codes.filter(c => c.machineId === m.id).length;
+          const isActive = m.active !== false;
+          const sm = machineScheme(m);
+          return `<div class="mgmt-item">
+            <span class="mgmt-item-code">${m.code}</span>
+            <span class="mgmt-item-name">${m.name}</span>
+            <span class="mgmt-item-meta" title="Schema codifica" style="font-family:var(--mono)">Macchina ${typeHint(sm.mLen, sm.mType)} &bull; Gruppo ${typeHint(sm.gLen, sm.gType)}</span>
+            <span class="mgmt-item-meta">${gc} gruppi</span>
+            <span class="mgmt-item-meta">${cc} codici</span>
+            <span class="status-badge" style="background:${isActive ? 'rgba(46,174,109,.13)' : 'rgba(136,136,136,.13)'};color:${isActive ? 'var(--green)' : '#888'}">${isActive ? 'Attiva' : 'Inattiva'}</span>
+            <div class="mgmt-item-actions">
+              <button class="mini-btn" onclick="editMachineModal('${m.id}')">&#9999;</button>
+              <button class="mini-btn danger" onclick="delMachine('${m.id}')">&#128465;</button>
+            </div>
+          </div>`;
+        }).join('')
+      : '<div style="color:var(--text-dim);padding:8px 0;font-style:italic">Nessuna macchina. Aggiungine una.</div>';
+
+    el.innerHTML = `<div class="mgmt-panel">
+      <div class="mgmt-list">${rows}</div>
+      <div class="mgmt-form" style="flex-wrap:wrap;align-items:flex-end;gap:12px">
+        <div class="mgmt-form-field">
+          <label>Codice macchina</label>
+          <input id="nm-code" maxlength="3" placeholder="TRN" style="width:90px;text-transform:uppercase;font-family:var(--mono);font-weight:700" oninput="this.value=this.value.toUpperCase()">
+        </div>
+        <div class="mgmt-form-field">
+          <label>N&deg; car. macchina</label>
+          <input id="nm-mlen" type="number" min="1" max="10" value="3" style="width:64px" oninput="var c=document.getElementById('nm-code');if(c)c.maxLength=this.value">
+        </div>
+        <div class="mgmt-form-field">
+          <label>Tipo car. macchina</label>
+          <select id="nm-mtype" style="width:140px">
+            <option value="alpha">Alfabetico</option>
+            <option value="num">Numerico</option>
+            <option value="alnum">Alfanumerico</option>
+          </select>
+        </div>
+        <div class="mgmt-form-field">
+          <label>N&deg; car. gruppo</label>
+          <input id="nm-glen" type="number" min="1" max="10" value="3" style="width:64px">
+        </div>
+        <div class="mgmt-form-field">
+          <label>Tipo car. gruppo</label>
+          <select id="nm-gtype" style="width:140px">
+            <option value="alpha">Alfabetico</option>
+            <option value="num">Numerico</option>
+            <option value="alnum">Alfanumerico</option>
+          </select>
+        </div>
+        <div class="mgmt-form-field">
+          <label>Nome macchina</label>
+          <input id="nm-name" placeholder="es. Tornio CNC" style="width:220px">
+        </div>
+        <button class="add-btn-sm" onclick="addMachine()">+ Aggiungi macchina</button>
+      </div>
+    </div>`;
+  }
+
+  else if (activeMgmtTab === 'group') {
+    const filterMid = window._mgmtGroupFilter || '';
+    const filteredGroups = filterMid ? db.groups.filter(g => g.machineId === filterMid) : db.groups;
+    const rows = filteredGroups.length
+      ? filteredGroups.map(g => {
+          const m = db.machines.find(x => x.id === g.machineId);
+          const cc = db.codes.filter(c => c.groupId === g.id).length;
+          const isActive = g.active !== false;
+          return `<div class="mgmt-item">
+            <span class="mgmt-item-code">${g.code}</span>
+            <span class="mgmt-item-name">${g.name}</span>
+            <span class="mgmt-item-meta" style="color:var(--accent);font-family:var(--mono)">${m ? m.code : '?'}</span>
+            <span class="mgmt-item-meta">${m ? m.name : '&mdash;'}</span>
+            <span class="mgmt-item-meta">${cc} codici</span>
+            <span class="status-badge" style="background:${isActive ? 'rgba(46,174,109,.13)' : 'rgba(136,136,136,.13)'};color:${isActive ? 'var(--green)' : '#888'}">${isActive ? 'Attivo' : 'Inattivo'}</span>
+            <div class="mgmt-item-actions">
+              <button class="mini-btn" onclick="editGroupModal('${g.id}')">&#9999;</button>
+              <button class="mini-btn danger" onclick="delGroup('${g.id}')">&#128465;</button>
+            </div>
+          </div>`;
+        }).join('')
+      : `<div style="color:var(--text-dim);padding:8px 0;font-style:italic">${db.groups.length ? 'Nessun gruppo per questa macchina.' : 'Nessun gruppo. Prima aggiungi una macchina.'}</div>`;
+
+    el.innerHTML = `<div class="mgmt-panel">
+      <div style="display:flex;align-items:flex-end;gap:12px;margin-bottom:14px;flex-wrap:wrap">
+        <div class="mgmt-form-field">
+          <label>Filtra per macchina</label>
+          <select id="mgmt-group-filter" style="min-width:200px" onchange="window._mgmtGroupFilter=this.value;renderMC()">
+            <option value="">Tutte le macchine</option>
+            ${db.machines.map(m => `<option value="${m.id}" ${m.id === filterMid ? 'selected' : ''}>${m.code} &mdash; ${m.name}</option>`).join('')}
+          </select>
+        </div>
+        <span style="font-size:12px;color:var(--text-dim);margin-bottom:2px">${filteredGroups.length} gruppo${filteredGroups.length !== 1 ? 'i' : ''}</span>
+      </div>
+      <div class="mgmt-list">${rows}</div>
+      <div class="mgmt-form">
+        <div class="mgmt-form-field">
+          <label>Macchina</label>
+          <select id="ng-machine" style="min-width:160px" onchange="onGroupMachineChange()">
+            ${db.machines.map(m => `<option value="${m.id}" ${m.id === filterMid ? 'selected' : ''}>${m.code} &mdash; ${m.name}</option>`).join('')}
+          </select>
+        </div>
+        <div class="mgmt-form-field">
+          <label id="ng-code-label">Codice gruppo</label>
+          <input id="ng-code" maxlength="3" placeholder="BAS" style="width:80px;text-transform:uppercase;font-family:var(--mono);font-weight:700" oninput="this.value=this.value.toUpperCase()">
+        </div>
+        <div class="mgmt-form-field">
+          <label>Nome gruppo</label>
+          <input id="ng-name" placeholder="es. Base" style="width:200px">
+        </div>
+        <button class="add-btn-sm" onclick="addGroup()">+ Aggiungi gruppo</button>
+      </div>
+    </div>`;
+    onGroupMachineChange();
+  }
+
+  else if (activeMgmtTab === 'user') {
+    el.innerHTML = `<div class="mgmt-panel">
+      <div class="mgmt-list">${db.users.map(u =>
+        `<div class="mgmt-item" style="border-left:3px solid ${u.color}">
+          <span class="mgmt-item-name">${u.name}</span>
+          <span class="mgmt-item-meta">@${u.username || '&mdash;'}</span>
+          <span class="mgmt-item-meta">${u.role === 'admin' ? 'Admin' : 'Operatore'}</span>
+          <span class="mgmt-item-meta" style="color:${u.passwordHash ? 'var(--green)' : 'var(--orange)'}">${u.passwordHash ? '&#128274; Password set' : '&#9888; No password'}</span>
+          <div class="mgmt-item-actions">
+            <button class="mini-btn" onclick="editUserModal('${u.id}')">&#9999;</button>
+            ${u.passwordHash ? `<button class="mini-btn" onclick="resetUserPassword('${u.id}')" title="Reset password">&#128273;</button>` : ''}
+            <button class="mini-btn danger" onclick="delUser('${u.id}')">&#128465;</button>
+          </div>
+        </div>`
+      ).join('')}</div>
+      <div class="mgmt-form">
+        <div class="mgmt-form-field">
+          <label>Nome completo</label>
+          <input id="nu-name" placeholder="Mario Rossi" style="width:180px">
+        </div>
+        <div class="mgmt-form-field">
+          <label>Username</label>
+          <input id="nu-username" placeholder="mario" style="width:130px">
+        </div>
+        <div class="mgmt-form-field">
+          <label>Ruolo</label>
+          <select id="nu-role" style="width:130px">
+            <option value="">&#8212; Ruolo &#8212;</option>
+            <option value="admin">Admin</option>
+            <option value="operator">Operatore</option>
+          </select>
+        </div>
+        <button class="add-btn-sm" onclick="addUser()">+ Aggiungi utente</button>
+      </div>
+    </div>`;
+  }
+
+  else if (activeMgmtTab === 'backup') {
+    renderBackupTab();
+  }
+
+  else if (activeMgmtTab === 'impostazioni') {
+    el.innerHTML = `<div class="mgmt-panel">
+      <div style="max-width:520px;display:flex;flex-direction:column;gap:16px">
+        <p style="font-size:13px;color:var(--text-dim);margin:0;line-height:1.6">
+          Al click su <b>Genera</b>, SolidWorks si apre direttamente con un nuovo documento intitolato al codice,
+          usando i template da <i>Strumenti &rarr; Opzioni &rarr; Template predefiniti</i>.
+          Il salvataggio va fatto manualmente.
+        </p>
+        <div>
+          <p style="font-size:12px;color:var(--text-dim);margin:0 0 10px"><b>Setup iniziale &mdash; una volta sola:</b> scarica il file .reg e fai doppio clic. Windows chieder&agrave; conferma, clicca S&igrave;.</p>
+          <button class="add-btn-sm" style="background:var(--green)" onclick="downloadSetupReg()">&#11015; Scarica setup_codificatore.reg</button>
+        </div>
+      </div>
+    </div>`;
+  }
+}
+
+function saveSettings() {}
+
+// â”€â”€â”€ BACKUP & RIPRISTINO â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+const BACKUP_KEY = 'codificatore_backups';
+const MAX_BACKUPS = 7;
+
+// Backup automatico giornaliero
+function initAutoBackup() {
+  const lastBackup = localStorage.getItem('codificatore_last_backup');
+  const today = todayStr();
+  if (lastBackup !== today) {
+    createAutoBackup();
+    localStorage.setItem('codificatore_last_backup', today);
+  }
+  // Pianifica il prossimo backup a mezzanotte
+  const now = new Date();
+  const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 1);
+  const msUntilMidnight = tomorrow - now;
+  setTimeout(() => { createAutoBackup(); setInterval(createAutoBackup, 24 * 60 * 60 * 1000); }, msUntilMidnight);
+}
+
+function _buildBackup(auto) {
+  return {
+    date: new Date().toISOString(),
+    data: JSON.parse(JSON.stringify(db)),
+    codes: (db.codes || []).length,
+    machines: (db.machines || []).length,
+    groups: (db.groups || []).length,
+    users: (db.users || []).length,
+    auto
+  };
+}
+
+function createAutoBackup() {
+  const backups = getBackups();
+  backups.unshift(_buildBackup(true));
+  if (backups.length > MAX_BACKUPS) backups.splice(MAX_BACKUPS);
+  localStorage.setItem(BACKUP_KEY, JSON.stringify(backups));
+}
+
+function createManualBackup() {
+  const backups = getBackups();
+  backups.unshift(_buildBackup(false));
+  if (backups.length > MAX_BACKUPS) backups.splice(MAX_BACKUPS);
+  localStorage.setItem(BACKUP_KEY, JSON.stringify(backups));
+  showToast('&#128190; Backup creato!');
+  renderBackupTab();
+}
+
+function getBackups() {
+  try {
+    const b = localStorage.getItem(BACKUP_KEY);
+    return b ? JSON.parse(b) : [];
+  } catch(e) { return []; }
+}
+
+function renderBackupTab() {
+  const el = document.getElementById('mgmt-content');
+  const backups = getBackups();
+  const now = Date.now();
+
+  el.innerHTML = `<div class="mgmt-panel" style="max-width:820px">
+    <h3 style="margin:0 0 12px;color:var(--accent)">&#128190; Backup e Ripristino</h3>
+    <p style="color:var(--text-dim);font-size:14px;margin:0 0 24px">Backup automatici giornalieri + backup manuali. Massimo ${MAX_BACKUPS} backup salvati.</p>
+
+    <div style="display:flex;gap:12px;margin-bottom:32px;flex-wrap:wrap">
+      <button class="add-btn-sm" onclick="createManualBackup()">&#128190; Crea backup ora</button>
+      <button class="add-btn-sm" onclick="exportJSON()">&#11015; Esporta JSON</button>
+      <label style="cursor:pointer">
+        <input type="file" accept=".json" onchange="importBackupFile(event)" style="display:none">
+        <span class="add-btn-sm" style="display:inline-block">&#128194; Importa da file</span>
+      </label>
+      <button class="add-btn-sm" onclick="showResetModal()" style="background:var(--red);border-color:var(--red)">&#128308; Reset completo</button>
+    </div>
+
+    ${backups.length === 0 ? `<div style="color:var(--text-dim);padding:8px 0;font-style:italic">Nessun backup disponibile</div>` : `
+      <div style="display:flex;flex-direction:column;gap:12px">
+        ${backups.map((b, i) => {
+          const d = new Date(b.date);
+          const age = Math.floor((now - d.getTime()) / (1000 * 60 * 60 * 24));
+          const ageStr = age === 0 ? 'Oggi' : age === 1 ? 'Ieri' : `${age} giorni fa`;
+          const sizeKB = (JSON.stringify(b.data).length / 1024).toFixed(1);
+          return `<div class="mgmt-item" style="padding:16px">
+            <div style="flex:1">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap">
+                <span style="font-weight:600;font-size:15px">${b.auto ? '&#129302; Auto' : '&#128100; Manuale'} &mdash; ${d.toLocaleDateString('it-IT', {day:'2-digit',month:'2-digit',year:'numeric'})} ${d.toLocaleTimeString('it-IT', {hour:'2-digit',minute:'2-digit'})}</span>
+                <span style="background:var(--border);padding:3px 8px;border-radius:12px;font-size:12px;color:var(--text-dim)">${ageStr}</span>
+              </div>
+              <div style="display:flex;gap:16px;font-size:13px;color:var(--text-dim);flex-wrap:wrap">
+                <span>&#128221; ${b.codes != null ? b.codes : '?'} codici</span>
+                <span>&#128297; ${b.machines != null ? b.machines : '?'} macchine</span>
+                <span>&#128230; ${b.groups != null ? b.groups : '?'} gruppi</span>
+                <span>&#128100; ${b.users != null ? b.users : '?'} utenti</span>
+                <span>&#128190; ${sizeKB} KB</span>
+              </div>
+            </div>
+            <div class="mgmt-item-actions">
+              <button class="mini-btn" onclick="restoreBackup(${i})" title="Ripristina">&#8617;</button>
+              <button class="mini-btn" onclick="downloadBackup(${i})" title="Scarica">&#11015;</button>
+              <button class="mini-btn danger" onclick="deleteBackup(${i})" title="Elimina">&#128465;</button>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    `}
+  </div>`;
+}
+
+async function _syncDbToCloud() {
+  if (!supa) return;
+  updateSyncStatus('sync');
+  try {
+    const { error } = await supa.from('codificatore_data').upsert({ id: 1, data: db, updated_at: new Date().toISOString() });
+    if (error) throw error;
+    updateSyncStatus('ok');
+  } catch(e) {
+    console.error('Errore sync cloud:', e);
+    updateSyncStatus('err');
+  }
+}
+
+async function restoreBackup(index) {
+  const backups = getBackups();
+  if (!backups[index]) return;
+  const b = backups[index];
+  const d = new Date(b.date).toLocaleString('it-IT');
+  if (!confirm(`⚠️ ATTENZIONE!\n\nRipristinare il backup del ${d}?\n\nTutti i dati attuali saranno sostituiti con quelli del backup.\n\nQuesta operazione NON può essere annullata!`)) return;
+
+  db = JSON.parse(JSON.stringify(b.data));
+  localStorage.setItem(DB_KEY, JSON.stringify(db));
+  await _syncDbToCloud();
+  showToast('&#10003; Backup ripristinato!');
+  setTimeout(() => location.reload(), 1000);
+}
+
+function downloadBackup(index) {
+  const backups = getBackups();
+  if (!backups[index]) return;
+  const b = backups[index];
+  const d = new Date(b.date);
+  const fname = `codificatore_backup_${d.toISOString().slice(0,10)}_${String(d.getHours()).padStart(2,'0')}${String(d.getMinutes()).padStart(2,'0')}.json`;
+  downloadFile(fname, JSON.stringify(b.data, null, 2));
+  showToast('&#128190; Backup scaricato');
+}
+
+function deleteBackup(index) {
+  if (!confirm('Eliminare questo backup?')) return;
+  const backups = getBackups();
+  backups.splice(index, 1);
+  localStorage.setItem(BACKUP_KEY, JSON.stringify(backups));
+  showToast('Backup eliminato');
+  renderBackupTab();
+}
+
+async function importBackupFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    try {
+      const imported = JSON.parse(e.target.result);
+      if (!imported.users || !imported.machines) {
+        showToast('File non valido', 'error'); return;
+      }
+      if (!confirm(`⚠️ Importare i dati dal file "${file.name}"?\n\nI dati attuali saranno sostituiti.\n\nQuesta operazione NON può essere annullata!`)) return;
+
+      db = imported;
+      migrateDB();
+      localStorage.setItem(DB_KEY, JSON.stringify(db));
+      await _syncDbToCloud();
+      showToast('&#10003; Dati importati!');
+      setTimeout(() => location.reload(), 1000);
+    } catch(e) {
+      console.error('Errore import:', e);
+      showToast('Errore lettura file', 'error');
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+function exportJSON() {
+  downloadFile(`codificatore_${todayStr()}.json`, JSON.stringify(db, null, 2));
+  showToast('Esportato!');
+}
+
+// â”€â”€â”€ RESET COMPLETO â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function showResetModal() {
+  const adminUsers = db.users.filter(u => u.role === 'admin');
+  if (adminUsers.length === 0) { showToast('Nessun admin disponibile', 'error'); return; }
+
+  openModal(`<h3 style="margin:0 0 12px;color:var(--red)">&#128308; Reset Completo Database</h3>
+    <p style="color:var(--text-dim);font-size:14px;margin:0 0 20px">Questa operazione canceller&agrave; TUTTI i dati (macchine, gruppi, codici) e manterr&agrave; solo un utente admin che scegli tu.</p>
+
+    <div style="background:rgba(232,90,79,.1);border:1px solid var(--red);border-radius:8px;padding:16px;margin-bottom:20px">
+      <div style="font-weight:700;color:var(--red);margin-bottom:8px">&#9888;&#65039; ATTENZIONE</div>
+      <ul style="margin:0;padding-left:20px;font-size:13px;color:var(--text-dim)">
+        <li>Tutte le macchine saranno eliminate</li>
+        <li>Tutti i gruppi saranno eliminati</li>
+        <li>Tutti i codici generati saranno eliminati</li>
+        <li>Tutti gli utenti tranne quello selezionato saranno eliminati</li>
+        <li>Tutti i backup locali saranno eliminati</li>
+      </ul>
+    </div>
+
+    <div class="modal-field">
+      <label>Seleziona l'admin da mantenere:</label>
+      <select id="reset-admin-select">
+        ${adminUsers.map(u => `<option value="${u.id}">${u.name} (@${u.username || u.name})</option>`).join('')}
+      </select>
+    </div>
+
+    <div style="margin:16px 0;padding:12px;background:var(--bg);border:1px solid var(--border);border-radius:6px">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+        <input type="checkbox" id="reset-confirm-check" style="width:18px;height:18px">
+        <span style="font-size:14px">Confermo di voler procedere con il reset completo</span>
+      </label>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-outline" onclick="closeModal()">Annulla</button>
+      <button class="add-btn-sm" onclick="executeReset()" style="background:var(--red);border-color:var(--red)">&#128308; Reset Database</button>
+    </div>`);
+}
+
+async function executeReset() {
+  const adminId = document.getElementById('reset-admin-select').value;
+  const confirmed = document.getElementById('reset-confirm-check').checked;
+
+  if (!confirmed) { showToast('Devi confermare per procedere', 'error'); return; }
+  if (!confirm('⚠️ ULTIMA CONFERMA\n\nSei ASSOLUTAMENTE SICURO di voler cancellare tutto?\n\nQuesta operazione è IRREVERSIBILE!')) return;
+
+  const selectedAdmin = db.users.find(u => u.id === adminId);
+  if (!selectedAdmin) { showToast('Admin non trovato', 'error'); return; }
+
+  // Backup di sicurezza prima del reset
+  createManualBackup();
+
+  db = {
+    users: [{
+      id: selectedAdmin.id,
+      name: selectedAdmin.name,
+      username: selectedAdmin.username || selectedAdmin.name.toLowerCase().split(' ')[0],
+      role: 'admin',
+      color: selectedAdmin.color || '#3A7BE8',
+      passwordHash: selectedAdmin.passwordHash
+    }],
+    machines: [],
+    groups: [],
+    codes: [],
+    settings: Object.assign({}, defaultSettings),
+    nextId: 100
+  };
+
+  localStorage.setItem(DB_KEY, JSON.stringify(db));
+  localStorage.removeItem(BACKUP_KEY);
+  localStorage.removeItem('codificatore_last_backup');
+  localStorage.removeItem(DB_KEY + '_pending');
+  localStorage.removeItem(DB_KEY + '_savedAt');
+
+  await _syncDbToCloud();
+
+  closeModal();
+  showToast('&#10003; Database resettato!');
+  setTimeout(() => location.reload(), 1500);
+}
+
+// â”€â”€â”€ CRUD MACHINES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── SCHEMA CODIFICA (per-macchina) ───────────────────────────────
+const CODE_TYPES = { alpha: 'Alfabetico', num: 'Numerico', alnum: 'Alfanumerico' };
+
+// Schema della macchina con default retrocompatibili (3 lettere)
+function machineScheme(m) {
+  return {
+    mLen: (m && m.mCodeLen) || 3, mType: (m && m.mCodeType) || 'alpha',
+    gLen: (m && m.gCodeLen) || 3, gType: (m && m.gCodeType) || 'alpha'
+  };
+}
+
+function codeTypePattern(type) {
+  if (type === 'num') return /^[0-9]+$/;
+  if (type === 'alnum') return /^[A-Z0-9]+$/;
+  return /^[A-Z]+$/;
+}
+
+// Ritorna messaggio d'errore o null se valido
+function validateCodeFormat(code, len, type) {
+  if (code.length !== len) return `Il codice deve essere esattamente ${len} caratteri`;
+  if (!codeTypePattern(type).test(code)) {
+    const t = type === 'num' ? 'numerici (0-9)' : type === 'alnum' ? 'alfanumerici (A-Z, 0-9)' : 'alfabetici (A-Z)';
+    return `Il codice deve contenere solo caratteri ${t}`;
+  }
+  return null;
+}
+
+function typeHint(len, type) {
+  return `${len} car., ${(CODE_TYPES[type] || '').toLowerCase()}`;
+}
+
+function typeOptionsHtml(sel) {
+  return Object.keys(CODE_TYPES).map(v => `<option value="${v}" ${v === sel ? 'selected' : ''}>${CODE_TYPES[v]}</option>`).join('');
+}
+
+// Allinea il campo codice-gruppo allo schema della macchina selezionata
+function syncGroupCodeField(machineSelId, codeInpId, labelId) {
+  const mid = document.getElementById(machineSelId) ? document.getElementById(machineSelId).value : '';
+  const s = machineScheme(db.machines.find(x => x.id === mid));
+  const inp = document.getElementById(codeInpId);
+  const lbl = document.getElementById(labelId);
+  if (inp) inp.maxLength = s.gLen;
+  if (lbl) lbl.textContent = `Codice gruppo (${typeHint(s.gLen, s.gType)})`;
+}
+function onGroupMachineChange() { syncGroupCodeField('ng-machine', 'ng-code', 'ng-code-label'); }
+
+function addMachine() {
+  const code = document.getElementById('nm-code').value.trim().toUpperCase();
+  const name = document.getElementById('nm-name').value.trim();
+  const mLen = parseInt(document.getElementById('nm-mlen').value, 10);
+  const mType = document.getElementById('nm-mtype').value;
+  const gLen = parseInt(document.getElementById('nm-glen').value, 10);
+  const gType = document.getElementById('nm-gtype').value;
+  if (!mLen || mLen < 1 || mLen > 10) { showToast('Lunghezza codice macchina non valida (1-10)', 'error'); return; }
+  if (!gLen || gLen < 1 || gLen > 10) { showToast('Lunghezza codice gruppo non valida (1-10)', 'error'); return; }
+  const err = validateCodeFormat(code, mLen, mType);
+  if (err) { showToast(err, 'error'); return; }
+  if (!name) { showToast('Nome obbligatorio', 'error'); return; }
+  if (db.machines.find(m => m.code === code)) { showToast('Codice macchina giÃ  esistente', 'error'); return; }
+  db.machines.push({ id: gid(), code, name, active: true, mCodeLen: mLen, mCodeType: mType, gCodeLen: gLen, gCodeType: gType });
+  saveDB(); showToast(code + ' aggiunta'); renderGestione();
+}
+
+function editMachineModal(id) {
+  const m = db.machines.find(x => x.id === id); if (!m) return;
+  const s = machineScheme(m);
+  openModal(`<h3>&#9999; Modifica Macchina</h3>
+    <div class="modal-field"><label>Codice macchina</label>
+      <input id="em-code" maxlength="${s.mLen}" value="${m.code}" style="text-transform:uppercase;font-family:var(--mono);font-weight:700" oninput="this.value=this.value.toUpperCase()"></div>
+    <div style="display:flex;gap:10px">
+      <div class="modal-field" style="flex:1"><label>N&deg; car. macchina</label>
+        <input id="em-mlen" type="number" min="1" max="10" value="${s.mLen}" oninput="var c=document.getElementById('em-code');if(c)c.maxLength=this.value"></div>
+      <div class="modal-field" style="flex:1"><label>Tipo car. macchina</label>
+        <select id="em-mtype">${typeOptionsHtml(s.mType)}</select></div>
+    </div>
+    <div style="display:flex;gap:10px">
+      <div class="modal-field" style="flex:1"><label>N&deg; car. gruppo</label>
+        <input id="em-glen" type="number" min="1" max="10" value="${s.gLen}"></div>
+      <div class="modal-field" style="flex:1"><label>Tipo car. gruppo</label>
+        <select id="em-gtype">${typeOptionsHtml(s.gType)}</select></div>
+    </div>
+    <div class="modal-field"><label>Nome</label><input id="em-name" value="${m.name}"></div>
+    <div class="modal-field"><label>Stato</label>
+      <select id="em-active">
+        <option value="true" ${m.active !== false ? 'selected' : ''}>Attiva</option>
+        <option value="false" ${m.active === false ? 'selected' : ''}>Inattiva</option>
+      </select></div>
+    <div class="modal-actions">
+      <button class="btn-outline" onclick="closeModal()">Annulla</button>
+      <button class="add-btn-sm" onclick="saveMachineEdit('${id}')">Salva</button>
+    </div>`);
+}
+
+function saveMachineEdit(id) {
+  const m = db.machines.find(x => x.id === id); if (!m) return;
+  const code = document.getElementById('em-code').value.trim().toUpperCase();
+  const mLen = parseInt(document.getElementById('em-mlen').value, 10);
+  const mType = document.getElementById('em-mtype').value;
+  const gLen = parseInt(document.getElementById('em-glen').value, 10);
+  const gType = document.getElementById('em-gtype').value;
+  if (!mLen || mLen < 1 || mLen > 10) { showToast('Lunghezza codice macchina non valida (1-10)', 'error'); return; }
+  if (!gLen || gLen < 1 || gLen > 10) { showToast('Lunghezza codice gruppo non valida (1-10)', 'error'); return; }
+  const errM = validateCodeFormat(code, mLen, mType);
+  if (errM) { showToast(errM, 'error'); return; }
+  const existing = db.machines.find(x => x.code === code && x.id !== id);
+  if (existing) { showToast('Codice giÃ  esistente', 'error'); return; }
+  m.code = code; m.name = document.getElementById('em-name').value.trim();
+  m.active = document.getElementById('em-active').value === 'true';
+  m.mCodeLen = mLen; m.mCodeType = mType; m.gCodeLen = gLen; m.gCodeType = gType;
+  saveDB(); closeModal(); showToast('Aggiornata'); renderGestione();
+}
+
+function delMachine(id) {
+  const gc = db.groups.filter(g => g.machineId === id).length;
+  const cc = db.codes.filter(c => c.machineId === id).length;
+  if (!confirm(`Eliminare questa macchina?\nVerranno eliminati anche ${gc} gruppi e ${cc} codici in archivio.`)) return;
+  db.groups = db.groups.filter(g => g.machineId !== id);
+  db.codes = db.codes.filter(c => c.machineId !== id);
+  db.machines = db.machines.filter(m => m.id !== id);
+  saveDB(); showToast('Macchina eliminata'); renderGestione();
+}
+
+// â”€â”€â”€ CRUD GROUPS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function addGroup() {
+  const mid = document.getElementById('ng-machine')?.value;
+  const code = document.getElementById('ng-code').value.trim().toUpperCase();
+  const name = document.getElementById('ng-name').value.trim();
+  if (!mid) { showToast('Seleziona una macchina', 'error'); return; }
+  const sg = machineScheme(db.machines.find(x => x.id === mid));
+  const errG = validateCodeFormat(code, sg.gLen, sg.gType);
+  if (errG) { showToast(errG, 'error'); return; }
+  if (!name) { showToast('Nome obbligatorio', 'error'); return; }
+  if (db.groups.find(g => g.machineId === mid && g.code === code)) { showToast('Codice giÃ  esistente per questa macchina', 'error'); return; }
+  db.groups.push({ id: gid(), machineId: mid, code, name, active: true });
+  saveDB(); showToast(code + ' aggiunto'); renderGestione();
+}
+
+function editGroupModal(id) {
+  const g = db.groups.find(x => x.id === id); if (!g) return;
+  const s = machineScheme(db.machines.find(x => x.id === g.machineId));
+  openModal(`<h3>&#9999; Modifica Gruppo</h3>
+    <div class="modal-field"><label>Macchina</label>
+      <select id="eg-machine" onchange="syncGroupCodeField('eg-machine','eg-code','eg-code-label')">${db.machines.map(m => `<option value="${m.id}" ${m.id === g.machineId ? 'selected' : ''}>${m.code} &mdash; ${m.name}</option>`).join('')}</select></div>
+    <div class="modal-field"><label id="eg-code-label">Codice gruppo (${typeHint(s.gLen, s.gType)})</label>
+      <input id="eg-code" maxlength="${s.gLen}" value="${g.code}" style="text-transform:uppercase;font-family:var(--mono);font-weight:700" oninput="this.value=this.value.toUpperCase()"></div>
+    <div class="modal-field"><label>Nome</label><input id="eg-name" value="${g.name}"></div>
+    <div class="modal-field"><label>Stato</label>
+      <select id="eg-active">
+        <option value="true" ${g.active !== false ? 'selected' : ''}>Attivo</option>
+        <option value="false" ${g.active === false ? 'selected' : ''}>Inattivo</option>
+      </select></div>
+    <div class="modal-actions">
+      <button class="btn-outline" onclick="closeModal()">Annulla</button>
+      <button class="add-btn-sm" onclick="saveGroupEdit('${id}')">Salva</button>
+    </div>`);
+}
+
+function saveGroupEdit(id) {
+  const g = db.groups.find(x => x.id === id); if (!g) return;
+  const mid = document.getElementById('eg-machine').value;
+  const code = document.getElementById('eg-code').value.trim().toUpperCase();
+  const sg = machineScheme(db.machines.find(x => x.id === mid));
+  const errG = validateCodeFormat(code, sg.gLen, sg.gType);
+  if (errG) { showToast(errG, 'error'); return; }
+  const existing = db.groups.find(x => x.machineId === mid && x.code === code && x.id !== id);
+  if (existing) { showToast('Codice giÃ  esistente per questa macchina', 'error'); return; }
+  g.machineId = mid; g.code = code;
+  g.name = document.getElementById('eg-name').value.trim();
+  g.active = document.getElementById('eg-active').value === 'true';
+  saveDB(); closeModal(); showToast('Aggiornato'); renderGestione();
+}
+
+function delGroup(id) {
+  const cc = db.codes.filter(c => c.groupId === id).length;
+  if (!confirm(`Eliminare questo gruppo?\nVerranno eliminati anche ${cc} codici in archivio.`)) return;
+  db.codes = db.codes.filter(c => c.groupId !== id);
+  db.groups = db.groups.filter(g => g.id !== id);
+  saveDB(); showToast('Gruppo eliminato'); renderGestione();
+}
+
+// â”€â”€â”€ CRUD USERS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function addUser() {
+  const name = document.getElementById('nu-name').value.trim();
+  const username = document.getElementById('nu-username').value.trim();
+  const role = document.getElementById('nu-role').value;
+  if (!name) { showToast('Nome obbligatorio', 'error'); return; }
+  if (!username) { showToast('Username obbligatorio', 'error'); return; }
+  if (!role) { showToast('Seleziona un ruolo', 'error'); return; }
+  if (db.users.find(u => u.username === username)) { showToast('Username giÃ  esistente', 'error'); return; }
+  const color = '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
+  db.users.push({ id: gid(), name, username, role, color });
+  saveDB(); showToast(name + ' aggiunto'); renderGestione(); renderLogin();
+}
+
+function editUserModal(id) {
+  const u = db.users.find(x => x.id === id); if (!u) return;
+  openModal(`<h3>&#9999; Modifica Utente</h3>
+    <div class="modal-field"><label>Nome completo</label><input id="eu-name" value="${u.name}"></div>
+    <div class="modal-field"><label>Username</label><input id="eu-username" value="${u.username || ''}"></div>
+    <div class="modal-field"><label>Ruolo</label>
+      <select id="eu-role">
+        <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>Admin</option>
+        <option value="operator" ${u.role === 'operator' ? 'selected' : ''}>Operatore</option>
+      </select></div>
+    <div class="modal-actions">
+      <button class="btn-outline" onclick="closeModal()">Annulla</button>
+      <button class="add-btn-sm" onclick="saveUserEdit('${id}')">Salva</button>
+    </div>`);
+}
+
+function saveUserEdit(id) {
+  const u = db.users.find(x => x.id === id); if (!u) return;
+  u.name = document.getElementById('eu-name').value.trim();
+  u.username = document.getElementById('eu-username').value.trim();
+  u.role = document.getElementById('eu-role').value;
+  saveDB(); closeModal(); showToast('Aggiornato'); renderGestione(); renderLogin();
+}
+
+function delUser(id) {
+  if (db.users.length <= 1) { showToast('Serve almeno un utente', 'error'); return; }
+  if (id === currentUser.id) { showToast('Non puoi eliminare te stesso', 'error'); return; }
+  if (!confirm('Eliminare questo utente?')) return;
+  db.users = db.users.filter(u => u.id !== id);
+  saveDB(); showToast('Eliminato'); renderGestione(); renderLogin();
+}
+
+// â”€â”€â”€ EXPOSE GLOBALS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+Object.assign(window, {
+  loginAs, logout, submitPwd, closePwdModal, changePassword, submitChangePwd, resetUserPassword,
+  setView, toggleMgmt,
+  onMachineChange, updatePreview, selectType, generateCode, openInSolidWorks, copyLastCode,
+  onArchiveMachineChange, renderArchive, resetArchiveFilters, copyCode, delCode,
+  saveSettings, downloadSetupReg,
+  addMachine, editMachineModal, saveMachineEdit, delMachine,
+  addGroup, editGroupModal, saveGroupEdit, delGroup, onGroupMachineChange, syncGroupCodeField,
+  addUser, editUserModal, saveUserEdit, delUser,
+  createManualBackup, exportJSON, importBackupFile,
+  restoreBackup, downloadBackup, deleteBackup,
+  showResetModal, executeReset,
+  closeModal
+});
+
+// â”€â”€â”€ INIT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+(async function() {
+  await loadDB();
+  initAutoBackup();
+  renderLogin();
+})();
+</script>
+</body>
+</html>
+
+
+
+
+
+
+
