@@ -217,9 +217,14 @@ tr:hover td{background:rgba(255,255,255,.02)}
         </div>
       </div>
 
-      <button class="btn-primary" onclick="generateCode()" style="width:100%;padding:16px;font-size:15px;border-radius:10px;justify-content:center">
-        &#9881; Genera + Apri in SolidWorks
-      </button>
+      <div style="display:flex;gap:10px">
+        <button class="btn-primary" onclick="generateCode()" style="flex:1;padding:16px;font-size:15px;border-radius:10px;justify-content:center">
+          &#9881; Genera + Apri in SolidWorks
+        </button>
+        <button onclick="generateCodeOnly()" style="padding:16px 20px;font-size:15px;border-radius:10px;white-space:nowrap;background:#5BB8F5;border:none;color:#fff;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:background .15s" onmouseover="this.style.background='#7ACBFF'" onmouseout="this.style.background='#5BB8F5'">
+          &#10697; Solo Codice
+        </button>
+      </div>
     </div>
   </div>
 
@@ -740,6 +745,59 @@ function generateCode() {
   });
   saveDB();
   showToast(code + ' generato!');
+  setLastCode(code);
+  document.getElementById('gen-desc').value = '';
+  updatePreview();
+}
+
+function generateCodeOnly() {
+  const mid = document.getElementById('gen-machine').value;
+  const gid_val = selectedType === 'macchina' ? null : document.getElementById('gen-group').value;
+  const desc = document.getElementById('gen-desc').value.trim();
+  if (!mid) { showToast('Seleziona una macchina', 'error'); return; }
+  if (selectedType !== 'macchina' && !gid_val) { showToast('Seleziona un gruppo', 'error'); return; }
+
+  const m = db.machines.find(x => x.id === mid);
+  const g = gid_val ? db.groups.find(x => x.id === gid_val) : null;
+  if (!m) return;
+
+  let num, code;
+  const fileType = typeToExt(selectedType);
+
+  if (selectedType === 'macchina') {
+    const ex = db.codes.filter(c => c.type === 'macchina' && c.machineId === mid);
+    num = ex.length === 0 ? 0 : Math.max(...ex.map(c => c.number)) + 1;
+    code = `${m.code}-S${String(num).padStart(2, '0')}`;
+  } else if (selectedType === 'gruppo') {
+    const ex = db.codes.filter(c => c.type === 'gruppo' && c.machineId === mid && c.groupId === gid_val);
+    num = ex.length === 0 ? 0 : Math.max(...ex.map(c => c.number)) + 1;
+    code = `${m.code}-${g.code}-S${String(num).padStart(2, '0')}`;
+  } else if (selectedType === 'sottogruppo') {
+    const ex = db.codes.filter(c => c.type === 'sottogruppo' && c.machineId === mid && c.groupId === gid_val);
+    num = ex.length === 0 ? 999 : Math.min(...ex.map(c => c.number)) - 1;
+    if (num < 0) { showToast('Numerazione sottogruppi esaurita (000)', 'error'); return; }
+    code = `${m.code}-${g.code}-${String(num).padStart(3, '0')}`;
+  } else {
+    const ex = db.codes.filter(c => c.type === 'parte' && c.machineId === mid && c.groupId === gid_val);
+    num = ex.length === 0 ? 1 : Math.max(...ex.map(c => c.number)) + 1;
+    if (num > 999) { showToast('Numerazione parti esaurita (999)', 'error'); return; }
+    code = `${m.code}-${g.code}-${String(num).padStart(3, '0')}`;
+  }
+
+  if (db.codes.find(c => c.code === code)) {
+    showToast('Codice ' + code + ' già esistente — riprova', 'error'); return;
+  }
+
+  db.codes.push({
+    id: gid(), type: selectedType,
+    machineId: mid, groupId: gid_val,
+    machineCode: m.code, groupCode: g ? g.code : null,
+    number: num, code, fileType, description: desc,
+    createdBy: currentUser.id, createdAt: new Date().toISOString()
+  });
+  saveDB();
+  navigator.clipboard.writeText(code).catch(() => {});
+  showToast(code + ' generato e copiato!');
   setLastCode(code);
   document.getElementById('gen-desc').value = '';
   updatePreview();
