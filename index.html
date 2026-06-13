@@ -218,10 +218,10 @@ tr:hover td{background:rgba(255,255,255,.02)}
       </div>
 
       <div style="display:flex;gap:10px">
-        <button class="btn-primary" onclick="generateCode()" style="flex:1;padding:16px;font-size:15px;border-radius:10px;justify-content:center">
+        <button id="btn-genera-sw" class="btn-primary" onclick="generateCode()" style="flex:1;padding:16px;font-size:15px;border-radius:10px;justify-content:center">
           &#9881; Genera + Apri in SolidWorks
         </button>
-        <button onclick="generateCodeOnly()" style="padding:16px 20px;font-size:15px;border-radius:10px;white-space:nowrap;background:#5BB8F5;border:none;color:#fff;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:background .15s" onmouseover="this.style.background='#7ACBFF'" onmouseout="this.style.background='#5BB8F5'">
+        <button id="btn-genera-only" onclick="generateCodeOnly()" style="padding:16px 20px;font-size:15px;border-radius:10px;white-space:nowrap;background:#5BB8F5;border:none;color:#fff;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:background .15s" onmouseover="this.style.background='#7ACBFF'" onmouseout="this.style.background='#5BB8F5'">
           &#10697; Solo Codice
         </button>
       </div>
@@ -365,12 +365,24 @@ async function loadDB() {
   }
 }
 
-function saveDB() {
+async function saveDB(immediate = false) {
   localStorage.setItem(DB_KEY, JSON.stringify(db));
   localStorage.setItem(DB_KEY + '_savedAt', Date.now().toString());
   localStorage.setItem(DB_KEY + '_pending', '1');
   pendingSync = true;
-  if (supa) {
+  if (!supa) return true;
+  if (immediate) {
+    updateSyncStatus('sync');
+    try {
+      isSavingLocal = true;
+      const { error } = await supa.from('codificatore_data').upsert({ id: 1, data: db, updated_at: new Date().toISOString() });
+      if (error) throw error;
+      localStorage.removeItem(DB_KEY + '_pending'); pendingSync = false;
+      updateSyncStatus('ok');
+      setTimeout(() => { isSavingLocal = false; }, 800);
+      return true;
+    } catch(e) { console.error(e); updateSyncStatus('err'); isSavingLocal = false; return false; }
+  } else {
     if (syncTimer) clearTimeout(syncTimer);
     updateSyncStatus('sync');
     syncTimer = setTimeout(async () => {
@@ -383,6 +395,7 @@ function saveDB() {
         setTimeout(() => { isSavingLocal = false; }, 800);
       } catch(e) { console.error(e); updateSyncStatus('err'); isSavingLocal = false; }
     }, 600);
+    return true;
   }
 }
 
@@ -701,47 +714,74 @@ function updatePreview() {
   }
 }
 
-function generateCode() {
+async function _fetchLatestDB() {
+  if (!supa) return;
+  try {
+    const { data, error } = await supa.from('codificatore_data').select('data,updated_at').eq('id', 1).single();
+    if (!error && data && data.data) {
+      db = data.data; lastUpdate = data.updated_at; migrateDB();
+      localStorage.setItem(DB_KEY, JSON.stringify(db));
+    }
+  } catch(e) { console.warn('fetch pre-genera fallito, uso DB locale', e); }
+}
+
+function _calcNextCode(mid, gid_val, m, g) {
+  let num, code;
+  if (selectedType === 'macchina') {
+    const ex = db.codes.filter(c => c.type === 'macchina' && c.machineId === mid);
+    num = ex.length === 0 ? 0 : Math.max(...ex.map(c => c.number)) + 1;
+    code = `\-S\`;
+  } else if (selectedType === 'gruppo') {
+    const ex = db.codes.filter(c => c.type === 'gruppo' && c.machineId === mid && c.groupId === gid_val);
+    num = ex.length === 0 ? 0 : Math.max(...ex.map(c => c.number)) + 1;
+    code = `\-\-S\`;
+  } else if (selectedType === 'sottogruppo') {
+    const ex = db.codes.filter(c => c.type === 'sottogruppo' && c.machineId === mid && c.groupId === gid_val);
+    num = ex.length === 0 ? 999 : Math.min(...ex.map(c => c.number)) - 1;
+    if (num < 0) { showToast('Numerazione sottogruppi esaurita (000)', 'error'); return null; }
+    code = `\-\-\`;
+  } else {
+    const ex = db.codes.filter(c => c.type === 'parte' && c.machineId === mid && c.groupId === gid_val);
+    num = ex.length === 0 ? 1 : Math.max(...ex.map(c => c.number)) + 1;
+    if (num > 999) { showToast('Numerazione parti esaurita (999)', 'error'); return null; }
+    code = `\-\-\`;
+  }
+  return { num, code };
+}
+
+function _setGeneraButtonsDisabled(disabled) {
+  const b1 = document.getElementById('btn-genera-sw');
+  const b2 = document.getElementById('btn-genera-only');
+  if (b1) b1.disabled = disabled;
+  if (b2) b2.disabled = disabled;
+}
+
+async function generateCode() {
   const mid = document.getElementById('gen-machine').value;
   const gid_val = selectedType === 'macchina' ? null : document.getElementById('gen-group').value;
   const desc = document.getElementById('gen-desc').value.trim();
   if (!mid) { showToast('Seleziona una macchina', 'error'); return; }
   if (selectedType !== 'macchina' && !gid_val) { showToast('Seleziona un gruppo', 'error'); return; }
-  // Evita attese async prima del lancio locale: alcuni browser bloccano
-  // protocol handler/download quando il gesto utente non e' piu' attivo.
+
+  _setGeneraButtonsDisabled(true);
+  await _fetchLatestDB();
 
   const m = db.machines.find(x => x.id === mid);
   const g = gid_val ? db.groups.find(x => x.id === gid_val) : null;
-  if (!m) return;
+  if (!m) { _setGeneraButtonsDisabled(false); return; }
 
-  let num, code, fileType;
-  fileType = typeToExt(selectedType);
-
-  if (selectedType === 'macchina') {
-    const ex = db.codes.filter(c => c.type === 'macchina' && c.machineId === mid);
-    num = ex.length === 0 ? 0 : Math.max(...ex.map(c => c.number)) + 1;
-    code = `${m.code}-S${String(num).padStart(2, '0')}`;
-  } else if (selectedType === 'gruppo') {
-    const ex = db.codes.filter(c => c.type === 'gruppo' && c.machineId === mid && c.groupId === gid_val);
-    num = ex.length === 0 ? 0 : Math.max(...ex.map(c => c.number)) + 1;
-    code = `${m.code}-${g.code}-S${String(num).padStart(2, '0')}`;
-  } else if (selectedType === 'sottogruppo') {
-    const ex = db.codes.filter(c => c.type === 'sottogruppo' && c.machineId === mid && c.groupId === gid_val);
-    num = ex.length === 0 ? 999 : Math.min(...ex.map(c => c.number)) - 1;
-    if (num < 0) { showToast('Numerazione sottogruppi esaurita (000)', 'error'); return; }
-    code = `${m.code}-${g.code}-${String(num).padStart(3, '0')}`;
-  } else { // parte
-    const ex = db.codes.filter(c => c.type === 'parte' && c.machineId === mid && c.groupId === gid_val);
-    num = ex.length === 0 ? 1 : Math.max(...ex.map(c => c.number)) + 1;
-    if (num > 999) { showToast('Numerazione parti esaurita (999)', 'error'); return; }
-    code = `${m.code}-${g.code}-${String(num).padStart(3, '0')}`;
-  }
+  const result = _calcNextCode(mid, gid_val, m, g);
+  if (!result) { _setGeneraButtonsDisabled(false); return; }
+  const { num, code } = result;
+  const fileType = typeToExt(selectedType);
 
   if (db.codes.find(c => c.code === code)) {
-    showToast('Codice ' + code + ' giÃ  esistente â€” riprova', 'error'); return;
+    showToast('Codice ' + code + ' gia esistente - riprova', 'error');
+    _setGeneraButtonsDisabled(false); return;
   }
 
   openInSolidWorks(code, selectedType);
+
   db.codes.push({
     id: gid(), type: selectedType,
     machineId: mid, groupId: gid_val,
@@ -749,49 +789,43 @@ function generateCode() {
     number: num, code, fileType, description: desc,
     createdBy: currentUser.id, createdAt: new Date().toISOString()
   });
-  saveDB();
+
+  const ok = await saveDB(true);
+  if (!ok) {
+    db.codes.pop();
+    showToast('Errore salvataggio - riprova', 'error');
+    _setGeneraButtonsDisabled(false); return;
+  }
+
   showToast(code + ' generato!');
   setLastCode(code);
   document.getElementById('gen-desc').value = '';
   updatePreview();
+  _setGeneraButtonsDisabled(false);
 }
 
-function generateCodeOnly() {
+async function generateCodeOnly() {
   const mid = document.getElementById('gen-machine').value;
   const gid_val = selectedType === 'macchina' ? null : document.getElementById('gen-group').value;
   const desc = document.getElementById('gen-desc').value.trim();
   if (!mid) { showToast('Seleziona una macchina', 'error'); return; }
   if (selectedType !== 'macchina' && !gid_val) { showToast('Seleziona un gruppo', 'error'); return; }
 
+  _setGeneraButtonsDisabled(true);
+  await _fetchLatestDB();
+
   const m = db.machines.find(x => x.id === mid);
   const g = gid_val ? db.groups.find(x => x.id === gid_val) : null;
-  if (!m) return;
+  if (!m) { _setGeneraButtonsDisabled(false); return; }
 
-  let num, code;
+  const result = _calcNextCode(mid, gid_val, m, g);
+  if (!result) { _setGeneraButtonsDisabled(false); return; }
+  const { num, code } = result;
   const fileType = typeToExt(selectedType);
 
-  if (selectedType === 'macchina') {
-    const ex = db.codes.filter(c => c.type === 'macchina' && c.machineId === mid);
-    num = ex.length === 0 ? 0 : Math.max(...ex.map(c => c.number)) + 1;
-    code = `${m.code}-S${String(num).padStart(2, '0')}`;
-  } else if (selectedType === 'gruppo') {
-    const ex = db.codes.filter(c => c.type === 'gruppo' && c.machineId === mid && c.groupId === gid_val);
-    num = ex.length === 0 ? 0 : Math.max(...ex.map(c => c.number)) + 1;
-    code = `${m.code}-${g.code}-S${String(num).padStart(2, '0')}`;
-  } else if (selectedType === 'sottogruppo') {
-    const ex = db.codes.filter(c => c.type === 'sottogruppo' && c.machineId === mid && c.groupId === gid_val);
-    num = ex.length === 0 ? 999 : Math.min(...ex.map(c => c.number)) - 1;
-    if (num < 0) { showToast('Numerazione sottogruppi esaurita (000)', 'error'); return; }
-    code = `${m.code}-${g.code}-${String(num).padStart(3, '0')}`;
-  } else {
-    const ex = db.codes.filter(c => c.type === 'parte' && c.machineId === mid && c.groupId === gid_val);
-    num = ex.length === 0 ? 1 : Math.max(...ex.map(c => c.number)) + 1;
-    if (num > 999) { showToast('Numerazione parti esaurita (999)', 'error'); return; }
-    code = `${m.code}-${g.code}-${String(num).padStart(3, '0')}`;
-  }
-
   if (db.codes.find(c => c.code === code)) {
-    showToast('Codice ' + code + ' già esistente — riprova', 'error'); return;
+    showToast('Codice ' + code + ' gia esistente - riprova', 'error');
+    _setGeneraButtonsDisabled(false); return;
   }
 
   db.codes.push({
@@ -801,12 +835,20 @@ function generateCodeOnly() {
     number: num, code, fileType, description: desc,
     createdBy: currentUser.id, createdAt: new Date().toISOString()
   });
-  saveDB();
+
+  const ok = await saveDB(true);
+  if (!ok) {
+    db.codes.pop();
+    showToast('Errore salvataggio - riprova', 'error');
+    _setGeneraButtonsDisabled(false); return;
+  }
+
   navigator.clipboard.writeText(code).catch(() => {});
   showToast(code + ' generato e copiato!');
   setLastCode(code);
   document.getElementById('gen-desc').value = '';
   updatePreview();
+  _setGeneraButtonsDisabled(false);
 }
 
 function downloadFile(name, content) {
