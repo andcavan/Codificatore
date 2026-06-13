@@ -730,21 +730,21 @@ function _calcNextCode(mid, gid_val, m, g) {
   if (selectedType === 'macchina') {
     const ex = db.codes.filter(c => c.type === 'macchina' && c.machineId === mid);
     num = ex.length === 0 ? 0 : Math.max(...ex.map(c => c.number)) + 1;
-    code = `\-S\`;
+    code = `${m.code}-S${String(num).padStart(2, '0')}`;
   } else if (selectedType === 'gruppo') {
     const ex = db.codes.filter(c => c.type === 'gruppo' && c.machineId === mid && c.groupId === gid_val);
     num = ex.length === 0 ? 0 : Math.max(...ex.map(c => c.number)) + 1;
-    code = `\-\-S\`;
+    code = `${m.code}-${g.code}-S${String(num).padStart(2, '0')}`;
   } else if (selectedType === 'sottogruppo') {
     const ex = db.codes.filter(c => c.type === 'sottogruppo' && c.machineId === mid && c.groupId === gid_val);
     num = ex.length === 0 ? 999 : Math.min(...ex.map(c => c.number)) - 1;
     if (num < 0) { showToast('Numerazione sottogruppi esaurita (000)', 'error'); return null; }
-    code = `\-\-\`;
+    code = `${m.code}-${g.code}-${String(num).padStart(3, '0')}`;
   } else {
     const ex = db.codes.filter(c => c.type === 'parte' && c.machineId === mid && c.groupId === gid_val);
     num = ex.length === 0 ? 1 : Math.max(...ex.map(c => c.number)) + 1;
     if (num > 999) { showToast('Numerazione parti esaurita (999)', 'error'); return null; }
-    code = `\-\-\`;
+    code = `${m.code}-${g.code}-${String(num).padStart(3, '0')}`;
   }
   return { num, code };
 }
