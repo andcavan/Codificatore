@@ -253,7 +253,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
         </div>
         <div class="field-group" style="flex:2;min-width:180px">
           <label>Cerca</label>
-          <input type="text" id="af-search" placeholder="es. TRN-BAS o descrizione" oninput="renderArchive()" autocomplete="new-password">
+          <input type="text" id="af-search" placeholder="es. TRN-BAS o descrizione" oninput="renderArchive()" autocomplete="off" readonly onfocus="this.removeAttribute('readonly')">
         </div>
         <button class="btn-ghost" onclick="resetArchiveFilters()" style="margin-bottom:0">&#8635; Reset</button>
       </div>
@@ -476,8 +476,8 @@ function showPasswordModal(uid, mode) {
       <h3 style="color:var(--accent);margin-bottom:8px">${isCreate ? 'Imposta password &mdash; ' + (user.username || user.name) : 'Accesso: ' + (user.username || user.name)}</h3>
       <p style="margin:0 0 20px;color:var(--text-dim);font-size:13px">${isCreate ? 'Prima volta: crea la tua password personale' : 'Inserisci la tua password'}</p>
       <div style="display:flex;flex-direction:column;gap:12px">
-        <input type="password" id="pwd-input" placeholder="Password" autocomplete="${isCreate ? 'new-password' : 'current-password'}" onkeydown="if(event.key==='Enter')submitPwd()" style="width:100%;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;outline:none">
-        ${isCreate ? '<input type="password" id="pwd-confirm" placeholder="Conferma password" autocomplete="new-password" onkeydown="if(event.key===\'Enter\')submitPwd()" style="width:100%;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;outline:none">' : ''}
+        <input type="password" id="pwd-input" placeholder="Password" autocomplete="off" onkeydown="if(event.key==='Enter')submitPwd()" style="width:100%;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;outline:none">
+        ${isCreate ? '<input type="password" id="pwd-confirm" placeholder="Conferma password" autocomplete="off" onkeydown="if(event.key===\'Enter\')submitPwd()" style="width:100%;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;outline:none">' : ''}
         <div id="pwd-error" style="color:var(--red);font-size:13px;display:none"></div>
         <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px">
           <button class="btn-outline" onclick="closePwdModal()">Annulla</button>
@@ -487,7 +487,10 @@ function showPasswordModal(uid, mode) {
     </div>
   </div>`;
   document.body.insertAdjacentHTML('beforeend', html);
-  setTimeout(() => document.getElementById('pwd-input')?.focus(), 50);
+  setTimeout(() => {
+    const pi = document.getElementById('pwd-input'); if (pi) { pi.value = ''; pi.focus(); }
+    const pc = document.getElementById('pwd-confirm'); if (pc) pc.value = '';
+  }, 50);
 }
 
 function closePwdModal() { document.querySelector('.modal-backdrop')?.remove(); pendingLoginUserId = null; }
@@ -533,9 +536,9 @@ function changePassword() {
     <div class="modal">
       <h3 style="color:var(--accent)">Cambia password</h3>
       <div style="display:flex;flex-direction:column;gap:12px;margin-top:16px">
-        <input type="password" id="cp-old" placeholder="Password attuale" style="width:100%;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;outline:none">
-        <input type="password" id="cp-new" placeholder="Nuova password" style="width:100%;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;outline:none">
-        <input type="password" id="cp-confirm" placeholder="Conferma nuova password" onkeydown="if(event.key==='Enter')submitChangePwd()" style="width:100%;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;outline:none">
+        <input type="password" id="cp-old" placeholder="Password attuale" autocomplete="off" style="width:100%;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;outline:none">
+        <input type="password" id="cp-new" placeholder="Nuova password" autocomplete="off" style="width:100%;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;outline:none">
+        <input type="password" id="cp-confirm" placeholder="Conferma nuova password" autocomplete="off" onkeydown="if(event.key==='Enter')submitChangePwd()" style="width:100%;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;outline:none">
         <div id="cp-error" style="color:var(--red);font-size:13px;display:none"></div>
         <div style="display:flex;gap:8px;justify-content:flex-end">
           <button class="btn-outline" onclick="closePwdModal()">Annulla</button>
@@ -587,7 +590,7 @@ function setView(v) {
   document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
   document.getElementById('view-' + v)?.classList.add('active');
   renderHeader();
-  if (v === 'archivio') document.getElementById('af-search').value = '';
+  if (v === 'archivio') { const s = document.getElementById('af-search'); s.value = ''; s.setAttribute('readonly', ''); }
   ({ genera: renderGenera, archivio: renderArchive, gestione: renderGestione })[v]?.();
 }
 
