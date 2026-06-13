@@ -253,6 +253,8 @@ tr:hover td{background:rgba(255,255,255,.02)}
         </div>
         <div class="field-group" style="flex:2;min-width:180px">
           <label>Cerca</label>
+          <input type="text" name="fakeuser" style="opacity:0;position:absolute;height:0;width:0;border:none;padding:0" tabindex="-1" aria-hidden="true">
+          <input type="password" name="fakepwd" style="opacity:0;position:absolute;height:0;width:0;border:none;padding:0" tabindex="-1" aria-hidden="true">
           <input type="text" id="af-search" placeholder="es. TRN-BAS o descrizione" oninput="renderArchive()" autocomplete="off" readonly onfocus="this.removeAttribute('readonly')">
         </div>
         <button class="btn-ghost" onclick="resetArchiveFilters()" style="margin-bottom:0">&#8635; Reset</button>
